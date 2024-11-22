@@ -158,7 +158,12 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		}
 	}
 
-	// Draw the active piece
+	// Draw the bounding box around the active piece
+	boundingBoxColor := color.RGBA{R: 255, G: 255, B: 0, A: 255} // Yellow color
+	vector.DrawFilledRect(screen, float32(g.pieceX*cellSize), float32(g.pieceY*cellSize), g.activePiece.width*cellSize, 1, boundingBoxColor, false) // Top border
+	vector.DrawFilledRect(screen, float32(g.pieceX*cellSize), float32((g.pieceY+g.activePiece.height)*cellSize), g.activePiece.width*cellSize, 1, boundingBoxColor, false) // Bottom border
+	vector.DrawFilledRect(screen, float32(g.pieceX*cellSize), float32(g.pieceY*cellSize), 1, g.activePiece.height*cellSize, boundingBoxColor, false) // Left border
+	vector.DrawFilledRect(screen, float32((g.pieceX+g.activePiece.width)*cellSize), float32(g.pieceY*cellSize), 1, g.activePiece.height*cellSize, boundingBoxColor, false) // Right border
 	op := &ebiten.DrawImageOptions{}
 	op.GeoM.Scale(spriteScale, spriteScale) // Scale the sprite
 
