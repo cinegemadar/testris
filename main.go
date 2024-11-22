@@ -12,8 +12,8 @@ import (
 )
 
 const (
-	screenWidth  = 900  // Increased width for debugging
-	screenHeight = 700  // Increased height for debugging
+	screenWidth  = 900 // Increased width for debugging
+	screenHeight = 700 // Increased height for debugging
 	gridSize     = 27
 	cellSize     = 20
 	spriteScale  = 5 // Scale factor for sprites
