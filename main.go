@@ -24,6 +24,8 @@ type Piece struct {
 	image           *ebiten.Image // Single image for the piece
 	currentRotation float64       // Current rotation in degrees (0, 90, 180, 270)
 	width, height   int           // Dimensions of the piece
+	moveLeftKeyPressed  bool
+	moveRightKeyPressed bool
 }
 
 func (g *Game) Reset() {
@@ -73,10 +75,20 @@ func (g *Game) Update() error {
 
 	// Handle user input using a switch case
 	switch {
-	case ebiten.IsKeyPressed(ebiten.KeyArrowLeft) && g.canMove(-1, 0):
-		g.pieceX--
-	case ebiten.IsKeyPressed(ebiten.KeyArrowRight) && g.canMove(1, 0):
-		g.pieceX++
+	case ebiten.IsKeyPressed(ebiten.KeyArrowLeft):
+		if !g.moveLeftKeyPressed && g.canMove(-1, 0) {
+			g.pieceX--
+			g.moveLeftKeyPressed = true
+		}
+	case !ebiten.IsKeyPressed(ebiten.KeyArrowLeft):
+		g.moveLeftKeyPressed = false
+	case ebiten.IsKeyPressed(ebiten.KeyArrowRight):
+		if !g.moveRightKeyPressed && g.canMove(1, 0) {
+			g.pieceX++
+			g.moveRightKeyPressed = true
+		}
+	case !ebiten.IsKeyPressed(ebiten.KeyArrowRight):
+		g.moveRightKeyPressed = false
 	case ebiten.IsKeyPressed(ebiten.KeySpace):
 		if !g.rotateKeyPressed {
 			g.activePiece.currentRotation = math.Mod(g.activePiece.currentRotation+90, 360)
