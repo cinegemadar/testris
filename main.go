@@ -165,7 +165,7 @@ func (g *Game) lockPiece() {
 
 	// Draw the active piece onto the locked piece image with the correct transformations
 	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Scale(spriteScale, spriteScale)
+	op.GeoM.Scale(1, 1) // No additional scaling needed for locked pieces
 	op.GeoM.Rotate(g.activePiece.currentRotation * (math.Pi / 180))
 	op.GeoM.Translate(float64(g.activePiece.width*cellSize/2), float64(g.activePiece.height*cellSize/2))
 	lockedPieceImage.DrawImage(g.activePiece.image, op)
