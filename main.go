@@ -92,20 +92,32 @@ func NewGame() *Game {
 func (g *Game) Update() error {
 	g.frameCount++
 
-	// Handle user input using a switch case
-	switch {
-	case ebiten.IsKeyPressed(ebiten.KeyArrowLeft) && !g.moveLeftKeyPressed:
-		g.resetKeyPressFlagsExcept("moveLeftKeyPressed")
-		g.pieceX--
-	case ebiten.IsKeyPressed(ebiten.KeyArrowRight) && !g.moveRightKeyPressed:
-		g.resetKeyPressFlagsExcept("moveRightKeyPressed")
-		g.pieceX++
-	case ebiten.IsKeyPressed(ebiten.KeySpace) && !g.rotateKeyPressed:
-		g.resetKeyPressFlagsExcept("rotateKeyPressed")
-		g.activePiece.currentRotation = math.Mod(g.activePiece.currentRotation+90, 360)
-	default:
-		g.resetKeyPressFlagsExcept(``)
+	// Handle user input for single actions per key press
+	if ebiten.IsKeyPressed(ebiten.KeyArrowLeft) {
+		if !g.moveLeftKeyPressed {
+			g.pieceX--
+		}
+		g.moveLeftKeyPressed = true
+	} else {
+		g.moveLeftKeyPressed = false
+	}
 
+	if ebiten.IsKeyPressed(ebiten.KeyArrowRight) {
+		if !g.moveRightKeyPressed {
+			g.pieceX++
+		}
+		g.moveRightKeyPressed = true
+	} else {
+		g.moveRightKeyPressed = false
+	}
+
+	if ebiten.IsKeyPressed(ebiten.KeySpace) {
+		if !g.rotateKeyPressed {
+			g.activePiece.currentRotation = math.Mod(g.activePiece.currentRotation+90, 360)
+		}
+		g.rotateKeyPressed = true
+	} else {
+		g.rotateKeyPressed = false
 	}
 
 	// Drop the piece every few frames
