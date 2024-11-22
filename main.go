@@ -82,7 +82,8 @@ func (g *Game) Update() error {
 			g.activePiece.currentRotation = math.Mod(g.activePiece.currentRotation+90, 360)
 			g.rotateKeyPressed = true
 		}
-	case ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft):
+	case !ebiten.IsKeyPressed(ebiten.KeySpace):
+		g.rotateKeyPressed = false
 		x, y := ebiten.CursorPosition()
 		if x > screenWidth-140 && y > 160 && y < 190 {
 			g.Reset()
