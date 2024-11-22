@@ -3,8 +3,8 @@ package main
 import (
 	"image/color"
 	"log"
+	"math"
 	"math/rand"
-	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
@@ -45,8 +45,6 @@ func LoadImage(path string) *ebiten.Image {
 
 // Initialize a new game
 func NewGame() *Game {
-	rand.Seed(time.Now().UnixNano())
-
 	// Load the piece images
 	head := &Piece{image: LoadImage("assets/head.png"), currentRotation: 0, width: 3, height: 3}
 	torso := &Piece{image: LoadImage("assets/torso.png"), currentRotation: 0, width: 3, height: 3}
@@ -117,7 +115,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 
 	// Draw the sidebar
 	sidebarX := screenWidth - 140
-	ebitenutil.DrawRect(screen, float64(sidebarX), 0, 140, screenHeight, color.RGBA{R: 50, G: 50, B: 50, A: 255})
+	// ebitenutil.DrawRect(screen, float64(sidebarX), 0, 140, screenHeight, color.RGBA{R: 50, G: 50, B: 50, A: 255})
 
 	// Draw "Next Piece"
 	ebitenutil.DebugPrintAt(screen, "NEXT PIECE", sidebarX+10, 20)
