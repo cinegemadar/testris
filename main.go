@@ -140,9 +140,11 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	sidebarX := screenWidth - 140
 	vector.DrawFilledRect(screen, float32(sidebarX), 0, 140, screenHeight, color.RGBA{R: 70, G: 70, B: 70, A: 255}, false)
 
-	vector.DrawFilledRect(screen, 0, float32(screenHeight)-float32(borderThickness), float32(screenWidth), float32(borderThickness), color.White, false) // Bottom border
-	vector.DrawFilledRect(screen, 0, 0, float32(borderThickness), float32(screenHeight), color.White, false)                                             // Left border
-	vector.DrawFilledRect(screen, float32(sidebarX)-float32(borderThickness), 0, float32(borderThickness), float32(screenHeight), color.White, false)    // Right border
+	// Draw blue border around the game area
+	vector.DrawFilledRect(screen, 0, 0, float32(gridSize*cellSize), float32(borderThickness), color.RGBA{R: 0, G: 0, B: 255, A: 255}, false) // Top border
+	vector.DrawFilledRect(screen, 0, float32(gridSize*cellSize)-float32(borderThickness), float32(gridSize*cellSize), float32(borderThickness), color.RGBA{R: 0, G: 0, B: 255, A: 255}, false) // Bottom border
+	vector.DrawFilledRect(screen, 0, 0, float32(borderThickness), float32(gridSize*cellSize), color.RGBA{R: 0, G: 0, B: 255, A: 255}, false) // Left border
+	vector.DrawFilledRect(screen, float32(gridSize*cellSize)-float32(borderThickness), 0, float32(borderThickness), float32(gridSize*cellSize), color.RGBA{R: 0, G: 0, B: 255, A: 255}, false) // Right border
 	for y := 0; y < gridSize; y++ {
 		for x := 0; x < gridSize; x++ {
 			if g.grid[y][x] != nil {
