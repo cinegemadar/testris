@@ -176,19 +176,18 @@ func (g *Game) lockPiece() {
 	sin := math.Sin(angle)
 	for y := 0; y < height; y++ {
 		for x := 0; x < width; x++ {
-			// Transform the coordinates based on rotation
-			// Calculate rotated coordinates
-			xf := (float64(x)*cos - float64(y)*sin) / spriteScale
-			yf := (float64(x)*sin + float64(y)*cos) / spriteScale
-			// Check if the pixel is non-transparent
-			_, _, _, a := g.activePiece.image.At(int(xf), int(yf)).RGBA()
-			if a > 0 { // Non-transparent pixel
-				gridX := g.pieceX + int(xf)
-				gridY := g.pieceY + int(yf)
+			// Calculate the position in the grid
+			xf := float64(x)*cos - float64(y)*sin
+			yf := float64(x)*sin + float64(y)*cos
+			gridX := g.pieceX + int(xf/spriteScale)
+			gridY := g.pieceY + int(yf/spriteScale)
 
+			// Check if the pixel is non-transparent
+			_, _, _, a := g.activePiece.image.At(x, y).RGBA()
+			if a > 0 { // Non-transparent pixel
 				// Lock this cell into the grid
 				if gridX >= 0 && gridX < gridSize && gridY >= 0 && gridY < gridSize {
-					g.grid[gridY][gridX] = g.activePiece.image.At(int(xf), int(yf))
+					g.grid[gridY][gridX] = g.activePiece.image.At(x, y)
 				}
 			}
 		}
