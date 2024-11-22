@@ -100,7 +100,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	for y := 0; y < gridSize; y++ {
 		for x := 0; x < gridSize; x++ {
 			if g.grid[y][x] != nil {
-				ebitenutil.DrawRect(screen, float64(x*cellSize), float64(y*cellSize), cellSize, cellSize, g.grid[y][x])
+				vector.DrawFilledRect(screen, float64(x*cellSize), float64(y*cellSize), cellSize, cellSize, g.grid[y][x])
 			}
 		}
 	}
