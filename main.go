@@ -82,7 +82,7 @@ func (g *Game) Update() error {
 		}
 	case !ebiten.IsKeyPressed(ebiten.KeyArrowLeft):
 		g.moveLeftKeyPressed = false
-	case ebiten.IsKeyPressed(ebiten.KeyArrowRight) && !g.moveRightKeyPressed:
+	case ebiten.IsKeyPressed(ebiten.KeyArrowRight):
 		if !g.moveRightKeyPressed && g.canMove(1, 0) {
 			g.pieceX++
 			g.moveRightKeyPressed = true
