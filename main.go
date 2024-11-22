@@ -163,15 +163,19 @@ func (g *Game) lockPiece() {
 	op := &ebiten.DrawImageOptions{}
 	op.GeoM.Scale(spriteScale, spriteScale)
 	op.GeoM.Rotate(g.activePiece.currentRotation * (math.Pi / 180))
-	op.GeoM.Translate(float64(g.pieceX*cellSize), float64(g.pieceY*cellSize))
+	op.GeoM.Translate(float64(g.pieceX*cellSize+cellSize/2), float64(g.pieceY*cellSize+cellSize/2))
 
 	// Create a new image to represent the locked piece
-	lockedPieceImage := ebiten.NewImage(g.activePiece.image.Bounds().Dx()*spriteScale, g.activePiece.image.Bounds().Dy()*spriteScale)
+	lockedPieceImage := ebiten.NewImage(cellSize*spriteScale, cellSize*spriteScale)
 	lockedPieceImage.DrawImage(g.activePiece.image, op)
 
 	// Store the locked piece image in the grid
-	if g.pieceX >= 0 && g.pieceX < gridSize && g.pieceY >= 0 && g.pieceY < gridSize {
-		g.grid[g.pieceY][g.pieceX] = lockedPieceImage
+	for y := 0; y < g.activePiece.height; y++ {
+		for x := 0; x < g.activePiece.width; x++ {
+			if g.pieceX+x >= 0 && g.pieceX+x < gridSize && g.pieceY+y >= 0 && g.pieceY+y < gridSize {
+				g.grid[g.pieceY+y][g.pieceX+x] = lockedPieceImage
+			}
+		}
 	}
 
 	g.score++
