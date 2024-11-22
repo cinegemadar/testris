@@ -183,8 +183,8 @@ func (g *Game) lockPiece() {
 			// Calculate the position in the grid
 			xf := float64(x)*cos - float64(y)*sin
 			yf := float64(x)*sin + float64(y)*cos
-			gridX := g.pieceX + int(xf/spriteScale)
-			gridY := g.pieceY + int(yf/spriteScale)
+			gridX := g.pieceX + int(xf)
+			gridY := g.pieceY + int(yf)
 
 			// Check if the pixel is non-transparent
 			_, _, _, a := g.activePiece.image.At(x, y).RGBA()
