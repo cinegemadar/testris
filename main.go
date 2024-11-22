@@ -113,7 +113,7 @@ func (g *Game) Update() error {
 
 	if ebiten.IsKeyPressed(ebiten.KeySpace) {
 		if !g.rotateKeyPressed {
-			g.activePiece.currentRotation = math.Mod(g.activePiece.currentRotation+90, 360)
+			g.activePiece.currentRotation = float32(math.Mod(float64(g.activePiece.currentRotation+90), 360))
 		}
 		g.rotateKeyPressed = true
 	} else {
