@@ -194,7 +194,7 @@ func (g *Game) canMove(dx, dy int) bool {
 	newX, newY := g.pieceX+dx, g.pieceY+dy
 
 	// Ensure the 3x3 bounding box is within the grid boundaries
-	if newX < int(borderThickness/cellSize) || newX+2 >= gridSize-int(borderThickness/cellSize) || newY+2 >= gridSize-int(borderThickness/cellSize) {
+	if newX < int(borderThickness/float64(cellSize)) || newX+2 >= gridSize-int(borderThickness/float64(cellSize)) || newY+2 >= gridSize-int(borderThickness/float64(cellSize)) {
 		return false
 	}
 
