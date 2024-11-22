@@ -113,7 +113,7 @@ func (g *Game) Update() error {
 
 	if ebiten.IsKeyPressed(ebiten.KeySpace) {
 		if !g.rotateKeyPressed {
-			g.activePiece.currentRotation = float32(math.Mod(float64(g.activePiece.currentRotation+90), 360.0))
+			g.activePiece.currentRotation = float32(math.Mod(float64(g.activePiece.currentRotation+90), 360))
 		}
 		g.rotateKeyPressed = true
 	} else {
@@ -152,7 +152,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 				op := &ebiten.DrawImageOptions{}
 				op.GeoM.Scale(spriteScale, spriteScale) // Apply scaling to locked pieces
 				op.GeoM.Translate(float64(x*cellSize), float64(y*cellSize))
-				op.GeoM.Translate(-float32(g.grid[y][x].Bounds().Dx())/2, -float32(g.grid[y][x].Bounds().Dy())/2) // Center rotation
+				op.GeoM.Translate(-float64(g.grid[y][x].Bounds().Dx())/2, -float64(g.grid[y][x].Bounds().Dy())/2) // Center rotation
 				screen.DrawImage(g.grid[y][x], op)
 			}
 		}
@@ -163,20 +163,20 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	op.GeoM.Scale(spriteScale, spriteScale) // Scale the sprite
 
 	// Translate to the center of the piece for rotation
-	// op.GeoM.Translate(float32(g.activePiece.width*cellSize)/2, float32(g.activePiece.height*cellSize)/2)
+	op.GeoM.Translate(float64(g.activePiece.width*cellSize)/2, float64(g.activePiece.height*cellSize)/2)
 
 	// Apply rotation around the center
-	op.GeoM.Rotate(g.activePiece.currentRotation * (math.Pi / 180))
+	//op.GeoM.Rotate(float64(g.activePiece.currentRotation * (math.Pi / 180)))
 
 	// Translate back to the piece's position on the grid
-	op.GeoM.Translate(float32(g.pieceX*cellSize)-float32(g.activePiece.width*cellSize)/2, float32(g.pieceY*cellSize)-float32(g.activePiece.height*cellSize)/2)
+	op.GeoM.Translate(float64(g.pieceX*cellSize)-float64(g.activePiece.width*cellSize)/2, float64(g.pieceY*cellSize)-float64(g.activePiece.height*cellSize)/2)
 	screen.DrawImage(g.activePiece.image, op)
 
 	// Draw "Next Piece"
 	ebitenutil.DebugPrintAt(screen, "NEXT PIECE", sidebarX+10, 20)
 	op.GeoM.Reset()
 	op.GeoM.Scale(spriteScale, spriteScale) // Apply scaling to the next piece
-	op.GeoM.Translate(float32(sidebarX+40), 50)
+	op.GeoM.Translate(float64(sidebarX+40), 50)
 	screen.DrawImage(g.nextPiece.image, op)
 
 	// Draw restart button
@@ -204,19 +204,19 @@ func (g *Game) canMove(dx, dy float32) bool {
 
 func (g *Game) lockPiece() {
 	// Create a new image to represent the locked piece
-	lockedPieceImage := ebiten.NewImage(g.activePiece.width*cellSize, g.activePiece.height*cellSize)
+	lockedPieceImage := ebiten.NewImage(int(g.activePiece.width*cellSize), int(g.activePiece.height*cellSize))
 
 	// Draw the active piece onto the locked piece image with the correct transformations
 	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Rotate(g.activePiece.currentRotation * (math.Pi / 180))
-	op.GeoM.Translate(float32(g.activePiece.width*cellSize/2), float32(g.activePiece.height*cellSize/2))
+	op.GeoM.Rotate(float64(g.activePiece.currentRotation * (math.Pi / 180)))
+	op.GeoM.Translate(float64(g.activePiece.width*cellSize/2), float64(g.activePiece.height*cellSize/2))
 	lockedPieceImage.DrawImage(g.activePiece.image, op)
 
 	// Store the locked piece image in the middle cell of its position
 	midX := g.pieceX + g.activePiece.width/2
 	midY := g.pieceY + g.activePiece.height/2
 	if midX >= 0 && midX < gridSize && midY >= 0 && midY < gridSize {
-		g.grid[midY][midX] = lockedPieceImage
+		g.grid[int(midY)][int(midX)] = lockedPieceImage
 	}
 }
 
