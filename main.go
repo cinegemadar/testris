@@ -94,7 +94,7 @@ func (g *Game) Update() error {
 
 	// Handle user input for single actions per key press
 	if ebiten.IsKeyPressed(ebiten.KeyArrowLeft) {
-		if !g.moveLeftKeyPressed {
+		if !g.moveLeftKeyPressed && g.canMove(-1, 0) {
 			g.pieceX--
 		}
 		g.moveLeftKeyPressed = true
@@ -103,7 +103,7 @@ func (g *Game) Update() error {
 	}
 
 	if ebiten.IsKeyPressed(ebiten.KeyArrowRight) {
-		if !g.moveRightKeyPressed {
+		if !g.moveRightKeyPressed && g.canMove(1, 0) {
 			g.pieceX++
 		}
 		g.moveRightKeyPressed = true
