@@ -174,8 +174,8 @@ func (g *Game) lockPiece() {
 		for x := 0; x < width; x++ {
 			// Transform the coordinates based on rotation
 			// Calculate rotated coordinates
-			xf := float64(x)*cos - float64(y)*sin
-			yf := float64(x)*sin + float64(y)*cos
+			xf := (float64(x)*cos - float64(y)*sin) / spriteScale
+			yf := (float64(x)*sin + float64(y)*cos) / spriteScale
 			// Check if the pixel is non-transparent
 			_, _, _, a := g.activePiece.image.At(int(xf), int(yf)).RGBA()
 			if a > 0 { // Non-transparent pixel
