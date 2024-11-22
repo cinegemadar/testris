@@ -123,13 +123,13 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	op.GeoM.Scale(spriteScale, spriteScale) // Scale the sprite
 
 	// Translate to the center of the piece for rotation
-	op.GeoM.Translate(-float64(g.activePiece.width*cellSize)/2, -float64(g.activePiece.height*cellSize)/2)
+	op.GeoM.Translate(float64(g.activePiece.width*cellSize)/2, float64(g.activePiece.height*cellSize)/2)
 
 	// Apply rotation around the center
 	op.GeoM.Rotate(g.activePiece.currentRotation * (math.Pi / 180))
 
 	// Translate back to the piece's position on the grid
-	op.GeoM.Translate(float64(g.pieceX*cellSize+g.activePiece.width*cellSize/2), float64(g.pieceY*cellSize+g.activePiece.height*cellSize/2))
+	op.GeoM.Translate(float64(g.pieceX*cellSize), float64(g.pieceY*cellSize))
 	screen.DrawImage(g.activePiece.image, op)
 
 	// Draw "Next Piece"
