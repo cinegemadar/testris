@@ -193,10 +193,10 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
 func (g *Game) canMove(dx, dy int) bool {
 	newX, newY := g.pieceX+dx, g.pieceY+dy
 	within_border := true
-	within_border = within_border && newX > 0+borderThickness
-	within_border = within_border && newX+3 < gridSize-borderThickness
-	within_border = within_border && newY > 0+borderThickness
-	within_border = within_border && newY+3 < gridSize-borderThickness
+	within_border = within_border && newX >= int(borderThickness/cellSize)
+	within_border = within_border && newX+g.activePiece.width <= gridSize-int(borderThickness/cellSize)
+	within_border = within_border && newY >= int(borderThickness/cellSize)
+	within_border = within_border && newY+g.activePiece.height <= gridSize-int(borderThickness/cellSize)
 
 	// // Ensure the 3x3 bounding box is within the grid boundaries
 	// if newX < int(borderThickness)/cellSize || newX+g.activePiece.width > gridSize-int(borderThickness)/cellSize || newY+g.activePiece.height > gridSize-int(borderThickness)/cellSize {
