@@ -173,9 +173,11 @@ func (g *Game) lockPiece() {
 	op.GeoM.Translate(float64(g.activePiece.width*cellSize/2), float64(g.activePiece.height*cellSize/2))
 	lockedPieceImage.DrawImage(g.activePiece.image, op)
 
-	// Store the locked piece image in the top-left cell of its position
-	if g.pieceX >= 0 && g.pieceX < gridSize && g.pieceY >= 0 && g.pieceY < gridSize {
-		g.grid[g.pieceY][g.pieceX] = lockedPieceImage
+	// Store the locked piece image in the middle cell of its position
+	midX := g.pieceX + g.activePiece.width/2
+	midY := g.pieceY + g.activePiece.height/2
+	if midX >= 0 && midX < gridSize && midY >= 0 && midY < gridSize {
+		g.grid[midY][midX] = lockedPieceImage
 	}
 }
 
