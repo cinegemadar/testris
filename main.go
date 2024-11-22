@@ -27,7 +27,7 @@ type Piece struct {
 
 // Game represents the game state
 type Game struct {
-	grid           [gridSize][gridSize]color.Color // Store colors for each grid cell
+	grid           [gridSize][gridSize]*ebiten.Image // Store image references for each grid cell
 	activePiece    *Piece
 	nextPiece      *Piece
 	pieceX, pieceY int
@@ -108,7 +108,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 			if g.grid[y][x] != nil {
 				op := &ebiten.DrawImageOptions{}
 				op.GeoM.Translate(float64(x*cellSize), float64(y*cellSize))
-				screen.DrawImage(g.grid[y][x].(*ebiten.Image), op)
+				screen.DrawImage(g.grid[y][x], op)
 			}
 		}
 	}
@@ -189,7 +189,7 @@ func (g *Game) lockPiece() {
 			if a > 0 { // Non-transparent pixel
 				// Lock this cell into the grid
 				if gridX >= 0 && gridX < gridSize && gridY >= 0 && gridY < gridSize {
-					g.grid[gridY][gridX] = g.activePiece.image
+					g.grid[gridY][gridX] = g.activePiece.image.SubImage(image.Rect(x, y, x+1, y+1)).(*ebiten.Image)
 				}
 			}
 		}
