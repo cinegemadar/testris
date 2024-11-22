@@ -116,7 +116,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 
 	// Draw the sidebar
 	sidebarX := screenWidth - 140
-	ebitenutil.DrawRect(screen, float64(sidebarX), 0, 140, screenHeight, color.RGBA{R: 50, G: 50, B: 50, A: 255})
+	vector.DrawFilledRect(screen, float32(sidebarX), 0, 140, screenHeight, color.RGBA{R: 50, G: 50, B: 50, A: 255}, false)
 
 	// Draw "Next Piece"
 	ebitenutil.DebugPrintAt(screen, "NEXT PIECE", sidebarX+10, 20)
