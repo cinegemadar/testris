@@ -91,7 +91,7 @@ func (g *Game) Update() error {
 
 // Draw renders the game screen
 func (g *Game) Draw(screen *ebiten.Image) {
-	// Draw background
+	borderThickness := 5.0
 	screen.Fill(color.RGBA{R: 30, G: 30, B: 30, A: 255}) // Lighter background for debugging
 
 	// Draw the sidebar
