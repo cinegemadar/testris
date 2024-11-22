@@ -100,7 +100,6 @@ func (g *Game) Draw(screen *ebiten.Image) {
 
 	// Draw a horizontal, thick red line where the debug area starts
 	vector.DrawFilledRect(screen, float32(sidebarX), float32(screenHeight)-float32(borderThickness), float32(borderThickness), float32(screenHeight), color.RGBA{R: 255, G: 0, B: 0, A: 255}, false)
-	borderThickness := 5.0
 	vector.DrawFilledRect(screen, 0, float32(screenHeight)-float32(borderThickness), float32(screenWidth), float32(borderThickness), color.White, false) // Bottom border
 	vector.DrawFilledRect(screen, 0, 0, float32(borderThickness), float32(screenHeight), color.White, false)                                             // Left border
 	vector.DrawFilledRect(screen, float32(sidebarX)-float32(borderThickness), 0, float32(borderThickness), float32(screenHeight), color.White, false)    // Right border
