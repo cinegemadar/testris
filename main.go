@@ -160,42 +160,21 @@ func (g *Game) canMove(dx, dy int) bool {
 
 // Lock the current piece into the grid
 func (g *Game) lockPiece() {
-	bounds := g.activePiece.image.Bounds()
-	width := bounds.Dx()
-	height := bounds.Dy()
+	op := &ebiten.DrawImageOptions{}
+	op.GeoM.Scale(spriteScale, spriteScale)
+	op.GeoM.Rotate(g.activePiece.currentRotation * (math.Pi / 180))
+	op.GeoM.Translate(float64(g.pieceX*cellSize), float64(g.pieceY*cellSize))
 
-	// Ensure the rotation is one of the valid discrete angles
-	validAngles := []float64{0, 90, 180, 270}
-	closestAngle := validAngles[0]
-	minDiff := math.Abs(g.activePiece.currentRotation - validAngles[0])
-	for _, angle := range validAngles {
-		diff := math.Abs(g.activePiece.currentRotation - angle)
-		if diff < minDiff {
-			minDiff = diff
-			closestAngle = angle
-		}
-	}
-	angle := closestAngle * (3.14159265 / 180)
-	cos := math.Cos(angle)
-	sin := math.Sin(angle)
-	for y := 0; y < height; y++ {
-		for x := 0; x < width; x++ {
-			// Calculate the position in the grid
-			xf := float64(x)*cos - float64(y)*sin
-			yf := float64(x)*sin + float64(y)*cos
-			gridX := g.pieceX + int(xf)
-			gridY := g.pieceY + int(yf)
+	// Create a new image to represent the locked piece
+	lockedPieceImage := ebiten.NewImage(g.activePiece.image.Bounds().Dx()*spriteScale, g.activePiece.image.Bounds().Dy()*spriteScale)
+	lockedPieceImage.DrawImage(g.activePiece.image, op)
 
-			// Check if the pixel is non-transparent
-			_, _, _, a := g.activePiece.image.At(x, y).RGBA()
-			if a > 0 { // Non-transparent pixel
-				// Lock this cell into the grid
-				if gridX >= 0 && gridX < gridSize && gridY >= 0 && gridY < gridSize {
-					g.grid[gridY][gridX] = g.activePiece.image
-				}
-			}
-		}
+	// Store the locked piece image in the grid
+	if g.pieceX >= 0 && g.pieceX < gridSize && g.pieceY >= 0 && g.pieceY < gridSize {
+		g.grid[g.pieceY][g.pieceX] = lockedPieceImage
 	}
+
+	g.score++
 	g.score++
 }
 
