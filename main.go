@@ -160,17 +160,22 @@ func (g *Game) lockPiece() {
 	width := bounds.Dx()
 	height := bounds.Dy()
 
+	op := &ebiten.DrawImageOptions{}
+	op.GeoM.Rotate(g.activePiece.currentRotation * (3.14159265 / 180)) // Apply rotation
 	for y := 0; y < height; y++ {
 		for x := 0; x < width; x++ {
+			// Transform the coordinates based on rotation
+			xf, yf := float64(x), float64(y)
+			op.GeoM.Apply(&xf, &yf)
 			// Check if the pixel is non-transparent
-			_, _, _, a := g.activePiece.image.At(x, y).RGBA()
+			_, _, _, a := g.activePiece.image.At(int(xf), int(yf)).RGBA()
 			if a > 0 { // Non-transparent pixel
-				gridX := g.pieceX + x
-				gridY := g.pieceY + y
+				gridX := g.pieceX + int(xf)
+				gridY := g.pieceY + int(yf)
 
 				// Lock this cell into the grid
 				if gridX >= 0 && gridX < gridSize && gridY >= 0 && gridY < gridSize {
-					g.grid[gridY][gridX] = g.activePiece.image.At(x, y)
+					g.grid[gridY][gridX] = g.activePiece.image.At(int(xf), int(yf))
 				}
 			}
 		}
