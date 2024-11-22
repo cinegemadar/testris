@@ -9,14 +9,15 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/vector"
-	borderThickness = 5.0
+)
 
 const (
-	screenWidth  = 900 // Increased width for debugging
-	screenHeight = 700 // Increased height for debugging
-	gridSize     = 27
-	cellSize     = 20
-	spriteScale  = 5 // Scale factor for sprites
+	borderThickness = 5.0
+	screenWidth     = 900 // Increased width for debugging
+	screenHeight    = 700 // Increased height for debugging
+	gridSize        = 27
+	cellSize        = 20
+	spriteScale     = 5 // Scale factor for sprites
 )
 
 type Piece struct {
@@ -91,7 +92,6 @@ func (g *Game) Update() error {
 
 // Draw renders the game screen
 func (g *Game) Draw(screen *ebiten.Image) {
-	borderThickness = 5.0
 	screen.Fill(color.RGBA{R: 30, G: 30, B: 30, A: 255}) // Lighter background for debugging
 
 	// Draw the sidebar
