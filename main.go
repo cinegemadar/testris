@@ -160,13 +160,15 @@ func (g *Game) lockPiece() {
 	width := bounds.Dx()
 	height := bounds.Dy()
 
-	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Rotate(g.activePiece.currentRotation * (3.14159265 / 180)) // Apply rotation
+	angle := g.activePiece.currentRotation * (3.14159265 / 180)
+	cos := math.Cos(angle)
+	sin := math.Sin(angle)
 	for y := 0; y < height; y++ {
 		for x := 0; x < width; x++ {
 			// Transform the coordinates based on rotation
-			xf, yf := float64(x), float64(y)
-			op.GeoM.Apply(&xf, &yf)
+			// Calculate rotated coordinates
+			xf := float64(x)*cos - float64(y)*sin
+			yf := float64(x)*sin + float64(y)*cos
 			// Check if the pixel is non-transparent
 			_, _, _, a := g.activePiece.image.At(int(xf), int(yf)).RGBA()
 			if a > 0 { // Non-transparent pixel
