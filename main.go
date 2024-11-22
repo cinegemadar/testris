@@ -191,25 +191,17 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
 func (g *Game) canMove(dx, dy int) bool {
 	newX, newY := g.pieceX+dx, g.pieceY+dy
 
-	// Calculate the corner positions
-	corners := [][2]int{
-		{0, 0}, // Upper left
-		{g.activePiece.width - 1, 0}, // Upper right
-		{0, g.activePiece.height - 1}, // Bottom left
-		{g.activePiece.width - 1, g.activePiece.height - 1}, // Bottom right
+	// Ensure the 3x3 bounding box is within the grid boundaries
+	if newX < 0 || newX+2 >= gridSize || newY+2 >= gridSize {
+		return false
 	}
 
-	for _, corner := range corners {
-		x, y := corner[0], corner[1]
-
-		// Check if the corner is within bounds
-		if newX+x < 0 || newX+x >= gridSize || newY+y >= gridSize {
-			return false
-		}
-
-		// Check collision at the corner
-		if g.grid[newY+y][newX+x] != nil {
-			return false
+	// Check for collisions within the 3x3 bounding box
+	for y := 0; y < 3; y++ {
+		for x := 0; x < 3; x++ {
+			if g.grid[newY+y][newX+x] != nil {
+				return false
+			}
 		}
 	}
 
