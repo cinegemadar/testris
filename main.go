@@ -1,6 +1,7 @@
 package main
 
 import (
+	"image"
 	"image/color"
 	"log"
 	"math"
@@ -53,7 +54,7 @@ func NewGame() *Game {
 	allPieces := []*Piece{head, torso, leg}
 
 	return &Game{
-		grid:        [gridSize][gridSize]color.Color{},
+		grid:        [gridSize][gridSize]*ebiten.Image{},
 		activePiece: allPieces[rand.Intn(len(allPieces))],
 		nextPiece:   allPieces[rand.Intn(len(allPieces))],
 		pieceX:      gridSize / 2,
