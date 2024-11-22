@@ -191,31 +191,37 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
 func (g *Game) canMove(dx, dy int) bool {
 	newX, newY := g.pieceX+dx, g.pieceY+dy
 
-	// Check bounds and collisions
-	for y := 0; y < g.activePiece.height; y++ {
-		for x := 0; x < g.activePiece.width; x++ {
-			// Calculate the rotated position
-			rotatedX, rotatedY := x, y
-			switch g.activePiece.currentRotation {
-			case 90:
-				rotatedX, rotatedY = y, g.activePiece.width-1-x
-			case 180:
-				rotatedX, rotatedY = g.activePiece.width-1-x, g.activePiece.height-1-y
-			case 270:
-				rotatedX, rotatedY = g.activePiece.height-1-y, x
-			}
+	// Calculate the corner positions based on the current rotation
+	corners := [][2]int{
+		{0, 0}, // Upper left
+		{g.activePiece.width - 1, 0}, // Upper right
+		{0, g.activePiece.height - 1}, // Bottom left
+		{g.activePiece.width - 1, g.activePiece.height - 1}, // Bottom right
+	}
 
-			// Check bounds
-			if newX+rotatedX < 0 || newX+rotatedX >= gridSize || newY+rotatedY >= gridSize {
-				return false
-			}
+	for _, corner := range corners {
+		x, y := corner[0], corner[1]
+		rotatedX, rotatedY := x, y
+		switch g.activePiece.currentRotation {
+		case 90:
+			rotatedX, rotatedY = y, g.activePiece.width-1-x
+		case 180:
+			rotatedX, rotatedY = g.activePiece.width-1-x, g.activePiece.height-1-y
+		case 270:
+			rotatedX, rotatedY = g.activePiece.height-1-y, x
+		}
 
-			// Check collision
-			if g.grid[newY+rotatedY][newX+rotatedX] != nil {
-				return false
-			}
+		// Check if the corner is within bounds
+		if newX+rotatedX < 0 || newX+rotatedX >= gridSize || newY+rotatedY >= gridSize {
+			return false
+		}
+
+		// Check collision at the corner
+		if g.grid[newY+rotatedY][newX+rotatedX] != nil {
+			return false
 		}
 	}
+
 	return true
 }
 
