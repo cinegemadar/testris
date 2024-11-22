@@ -94,10 +94,14 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	// Draw background
 	screen.Fill(color.RGBA{R: 0, G: 0, B: 0, A: 255}) // Black background
 
+	// Draw the sidebar
+	sidebarX := screenWidth - 140
+	vector.DrawFilledRect(screen, float32(sidebarX), 0, 140, screenHeight, color.RGBA{R: 50, G: 50, B: 50, A: 255}, false)
+
 	// Draw the border lines
 	borderThickness := 5.0
-	vector.DrawFilledRect(screen, 0, float32(screenHeight)-float32(borderThickness), float32(screenWidth), float32(borderThickness), color.White, false) // Bottom border
-	vector.DrawFilledRect(screen, 0, 0, float32(borderThickness), float32(screenHeight), color.White, false)                                            // Left border
+	vector.DrawFilledRect(screen, 0, float32(screenHeight)-float32(borderThickness), float32(screenWidth), float32(borderThickness), color.White, false)   // Bottom border
+	vector.DrawFilledRect(screen, 0, 0, float32(borderThickness), float32(screenHeight), color.White, false)                                               // Left border
 	vector.DrawFilledRect(screen, float32(screenWidth)-float32(borderThickness)-1, 0, float32(borderThickness), float32(screenHeight), color.White, false) // Right border
 	for y := 0; y < gridSize; y++ {
 		for x := 0; x < gridSize; x++ {
@@ -114,10 +118,6 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	op.GeoM.Rotate(g.activePiece.currentRotation * (3.14159265 / 180))                                              // Apply rotation
 	op.GeoM.Translate(float64(g.pieceX*cellSize+cellSize/2), float64(g.pieceY*cellSize+cellSize/2))                 // Position the piece
 	screen.DrawImage(g.activePiece.image, op)
-
-	// Draw the sidebar
-	sidebarX := screenWidth - 140
-	vector.DrawFilledRect(screen, float32(sidebarX), 0, 140, screenHeight, color.RGBA{R: 50, G: 50, B: 50, A: 255}, false)
 
 	// Draw "Next Piece"
 	ebitenutil.DebugPrintAt(screen, "NEXT PIECE", sidebarX+10, 20)
