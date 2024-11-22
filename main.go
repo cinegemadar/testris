@@ -182,9 +182,9 @@ func (g *Game) lockPiece() {
 // Spawn a new piece
 func (g *Game) spawnNewPiece() {
 	pieces := []*Piece{
-		&Piece{image: LoadImage("assets/head.png"), currentRotation: 0, width: 3, height: 3, color: color.RGBA{R: 255, G: 0, B: 0, A: 255}},
-		&Piece{image: LoadImage("assets/torso.png"), currentRotation: 0, width: 3, height: 3, color: color.RGBA{R: 0, G: 255, B: 0, A: 255}},
-		&Piece{image: LoadImage("assets/leg.png"), currentRotation: 0, width: 3, height: 3, color: color.RGBA{R: 0, G: 0, B: 255, A: 255}},
+		{image: LoadImage("assets/head.png"), currentRotation: 0, width: 3, height: 3, color: color.RGBA{R: 255, G: 0, B: 0, A: 255}},
+		{image: LoadImage("assets/torso.png"), currentRotation: 0, width: 3, height: 3, color: color.RGBA{R: 0, G: 255, B: 0, A: 255}},
+		{image: LoadImage("assets/leg.png"), currentRotation: 0, width: 3, height: 3, color: color.RGBA{R: 0, G: 0, B: 255, A: 255}},
 	}
 
 	g.activePiece = g.nextPiece
