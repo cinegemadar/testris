@@ -110,6 +110,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 				op := &ebiten.DrawImageOptions{}
 				op.GeoM.Scale(spriteScale, spriteScale) // Apply scaling to locked pieces
 				op.GeoM.Translate(float64(x*cellSize), float64(y*cellSize))
+				op.GeoM.Translate(-float64(g.grid[y][x].Bounds().Dx())/2, -float64(g.grid[y][x].Bounds().Dy())/2) // Center rotation
 				screen.DrawImage(g.grid[y][x], op)
 			}
 		}
@@ -191,7 +192,7 @@ func (g *Game) lockPiece() {
 			if a > 0 { // Non-transparent pixel
 				// Lock this cell into the grid
 				if gridX >= 0 && gridX < gridSize && gridY >= 0 && gridY < gridSize {
-					g.grid[gridY][gridX] = g.activePiece.image.SubImage(image.Rect(x, y, x+1, y+1)).(*ebiten.Image)
+					g.grid[gridY][gridX] = g.activePiece.image
 				}
 			}
 		}
