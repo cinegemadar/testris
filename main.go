@@ -12,11 +12,11 @@ import (
 )
 
 const (
-	borderThickness = 10.0
+	borderThickness = 5
 	screenWidth     = 800
 	screenHeight    = 600
 	gridSize        = 27
-	cellSize        = 20
+	cellSize        = 15
 	spriteScale     = 8 // Scale factor for sprites
 )
 
@@ -140,11 +140,12 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	sidebarX := screenWidth - 140
 	vector.DrawFilledRect(screen, float32(sidebarX), 0, 140, screenHeight, color.RGBA{R: 70, G: 70, B: 70, A: 255}, false)
 
-	// Draw blue border around the game area
-	vector.DrawFilledRect(screen, 0, 0, float32(gridSize*cellSize), float32(borderThickness), color.RGBA{R: 0, G: 0, B: 255, A: 255}, false)                                                   // Top border
-	vector.DrawFilledRect(screen, 0, float32(gridSize*cellSize)-float32(borderThickness), float32(gridSize*cellSize), float32(borderThickness), color.RGBA{R: 0, G: 0, B: 255, A: 255}, false) // Bottom border
-	vector.DrawFilledRect(screen, 0, 0, float32(borderThickness), float32(gridSize*cellSize), color.RGBA{R: 0, G: 0, B: 255, A: 255}, false)                                                   // Left border
-	vector.DrawFilledRect(screen, float32(gridSize*cellSize)-float32(borderThickness), 0, float32(borderThickness), float32(gridSize*cellSize), color.RGBA{R: 0, G: 0, B: 255, A: 255}, false) // Right border
+	// Draw  border around the game area
+	border_color := color.RGBA{R: 70, G: 255, B: 255, A: 255}
+	vector.DrawFilledRect(screen, 0, 0, float32(gridSize*cellSize), float32(borderThickness), border_color, false)                                                   // Top border
+	vector.DrawFilledRect(screen, 0, float32(gridSize*cellSize)-float32(borderThickness), float32(gridSize*cellSize), float32(borderThickness), border_color, false) // Bottom border
+	vector.DrawFilledRect(screen, 0, 0, float32(borderThickness), float32(gridSize*cellSize), border_color, false)                                                   // Left border
+	vector.DrawFilledRect(screen, float32(gridSize*cellSize)-float32(borderThickness), 0, float32(borderThickness), float32(gridSize*cellSize), border_color, false) // Right border
 	for y := 0; y < gridSize; y++ {
 		for x := 0; x < gridSize; x++ {
 			if g.grid[y][x] != nil {
@@ -193,10 +194,10 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
 func (g *Game) canMove(dx, dy int) bool {
 	newX, newY := g.pieceX+dx, g.pieceY+dy
 	within_border := true
-	within_border = within_border && newX >= int(borderThickness)/cellSize
-	within_border = within_border && newX+g.activePiece.width <= gridSize-int(borderThickness)/cellSize
-	within_border = within_border && newY >= int(borderThickness)/cellSize
-	within_border = within_border && newY+g.activePiece.height <= gridSize-int(borderThickness)/cellSize
+	within_border = within_border && newX >= borderThickness/cellSize
+	within_border = within_border && newX+g.activePiece.width <= gridSize-borderThickness/cellSize
+	within_border = within_border && newY >= borderThickness/cellSize
+	within_border = within_border && newY+g.activePiece.height <= gridSize-borderThickness/cellSize
 
 	// // Ensure the 3x3 bounding box is within the grid boundaries
 	// if newX < int(borderThickness)/cellSize || newX+g.activePiece.width > gridSize-int(borderThickness)/cellSize || newY+g.activePiece.height > gridSize-int(borderThickness)/cellSize {
