@@ -75,19 +75,18 @@ func NewGame() *Game {
 func (g *Game) Update() error {
 	g.frameCount++
 
-	// Handle user input
-	if ebiten.IsKeyPressed(ebiten.KeyArrowLeft) && g.canMove(-1, 0) {
+	// Handle user input using a switch case
+	switch {
+	case ebiten.IsKeyPressed(ebiten.KeyArrowLeft) && g.canMove(-1, 0):
 		g.pieceX--
-	}
-	if ebiten.IsKeyPressed(ebiten.KeyArrowRight) && g.canMove(1, 0) {
+	case ebiten.IsKeyPressed(ebiten.KeyArrowRight) && g.canMove(1, 0):
 		g.pieceX++
-	}
-	if ebiten.IsKeyPressed(ebiten.KeySpace) {
+	case ebiten.IsKeyPressed(ebiten.KeySpace):
 		if !g.rotateKeyPressed {
 			g.activePiece.currentRotation = math.Mod(g.activePiece.currentRotation+90, 360)
 			g.rotateKeyPressed = true
 		}
-	} else {
+	default:
 		g.rotateKeyPressed = false
 	}
 
