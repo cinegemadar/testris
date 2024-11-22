@@ -26,10 +26,21 @@ type Piece struct {
 	width, height   int           // Dimensions of the piece
 }
 
-func (g *Game) resetKeyPressFlags() {
-	g.moveLeftKeyPressed = false
-	g.moveRightKeyPressed = false
-	g.rotateKeyPressed = false
+func (g *Game) resetKeyPressFlagsExcept(except ...string) {
+	g.moveLeftKeyPressed = true
+	g.moveRightKeyPressed = true
+	g.rotateKeyPressed = true
+
+	for _, flag := range except {
+		switch flag {
+		case "moveLeftKeyPressed":
+			g.moveLeftKeyPressed = false
+		case "moveRightKeyPressed":
+			g.moveRightKeyPressed = false
+		case "rotateKeyPressed":
+			g.rotateKeyPressed = false
+		}
+	}
 }
 
 func (g *Game) Reset() {
