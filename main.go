@@ -100,7 +100,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	for y := 0; y < gridSize; y++ {
 		for x := 0; x < gridSize; x++ {
 			if g.grid[y][x] != nil {
-				vector.DrawFilledRect(screen, float64(x*cellSize), float64(y*cellSize), cellSize, cellSize, g.grid[y][x])
+				ebitenutil.DrawRect(screen, float64(x*cellSize), float64(y*cellSize), cellSize, cellSize, g.grid[y][x])
 			}
 		}
 	}
@@ -115,7 +115,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 
 	// Draw the sidebar
 	sidebarX := screenWidth - 140
-	// ebitenutil.DrawRect(screen, float64(sidebarX), 0, 140, screenHeight, color.RGBA{R: 50, G: 50, B: 50, A: 255})
+	ebitenutil.DrawRect(screen, float64(sidebarX), 0, 140, screenHeight, color.RGBA{R: 50, G: 50, B: 50, A: 255})
 
 	// Draw "Next Piece"
 	ebitenutil.DebugPrintAt(screen, "NEXT PIECE", sidebarX+10, 20)
