@@ -27,20 +27,26 @@ type Piece struct {
 }
 
 func (g *Game) resetKeyPressFlagsExcept(except ...string) {
-	g.moveLeftKeyPressed = true
-	g.moveRightKeyPressed = true
-	g.rotateKeyPressed = true
 
-	for _, flag := range except {
-		switch flag {
-		case "moveLeftKeyPressed":
-			g.moveLeftKeyPressed = false
-		case "moveRightKeyPressed":
-			g.moveRightKeyPressed = false
-		case "rotateKeyPressed":
-			g.rotateKeyPressed = false
-		}
+	switch {
+	case _ == "moveLeftKeyPressed":
+		g.moveLeftKeyPressed = true
+		g.moveRightKeyPressed = false
+		g.rotateKeyPressed = false
+	case "moveRightKeyPressed":
+		g.moveLeftKeyPressed = false
+		g.moveRightKeyPressed = true
+		g.rotateKeyPressed = false
+	case "rotateKeyPressed":
+		g.moveLeftKeyPressed = false
+		g.moveRightKeyPressed = false
+		g.rotateKeyPressed = true
+	default:
+		g.moveLeftKeyPressed = false
+		g.moveRightKeyPressed = false
+		g.rotateKeyPressed = false
 	}
+
 }
 
 func (g *Game) Reset() {
@@ -93,19 +99,16 @@ func (g *Game) Update() error {
 	// Handle user input using a switch case
 	switch {
 	case ebiten.IsKeyPressed(ebiten.KeyArrowLeft) && !g.moveLeftKeyPressed:
-		g.resetKeyPressFlags()
-		g.moveLeftKeyPressed = true
+		g.resetKeyPressFlagsExcept("moveLeftKeyPressed")
 		g.pieceX--
 	case ebiten.IsKeyPressed(ebiten.KeyArrowRight) && !g.moveRightKeyPressed:
-		g.resetKeyPressFlags()
-		g.moveRightKeyPressed = true
+		g.resetKeyPressFlagsExcept("moveRightKeyPressed")
 		g.pieceX++
 	case ebiten.IsKeyPressed(ebiten.KeySpace) && !g.rotateKeyPressed:
-		g.resetKeyPressFlags()
-		g.rotateKeyPressed = true
+		g.resetKeyPressFlagsExcept("rotateKeyPressed")
 		g.activePiece.currentRotation = math.Mod(g.activePiece.currentRotation+90, 360)
 	default:
-		g.resetKeyPressFlags()
+		g.resetKeyPressFlagsExcept(``)
 
 		// case ebiten.IsKeyPressed(ebiten.KeyArrowLeft) && !g.moveLeftKeyPressed:
 		// 	if !g.moveLeftKeyPressed && g.canMove(-1, 0) {
