@@ -191,7 +191,7 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
 func (g *Game) canMove(dx, dy int) bool {
 	newX, newY := g.pieceX+dx, g.pieceY+dy
 
-	// Calculate the corner positions based on the current rotation
+	// Calculate the corner positions
 	corners := [][2]int{
 		{0, 0}, // Upper left
 		{g.activePiece.width - 1, 0}, // Upper right
@@ -201,23 +201,14 @@ func (g *Game) canMove(dx, dy int) bool {
 
 	for _, corner := range corners {
 		x, y := corner[0], corner[1]
-		rotatedX, rotatedY := x, y
-		switch g.activePiece.currentRotation {
-		case 90:
-			rotatedX, rotatedY = y, g.activePiece.width-1-x
-		case 180:
-			rotatedX, rotatedY = g.activePiece.width-1-x, g.activePiece.height-1-y
-		case 270:
-			rotatedX, rotatedY = g.activePiece.height-1-y, x
-		}
 
 		// Check if the corner is within bounds
-		if newX+rotatedX < 0 || newX+rotatedX >= gridSize || newY+rotatedY >= gridSize {
+		if newX+x < 0 || newX+x >= gridSize || newY+y >= gridSize {
 			return false
 		}
 
 		// Check collision at the corner
-		if g.grid[newY+rotatedY][newX+rotatedX] != nil {
+		if g.grid[newY+y][newX+x] != nil {
 			return false
 		}
 	}
