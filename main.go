@@ -94,12 +94,12 @@ func (g *Game) Update() error {
 func (g *Game) Draw(screen *ebiten.Image) {
 	screen.Fill(color.RGBA{R: 30, G: 30, B: 30, A: 255}) // Lighter background for debugging
 
-	// Draw the sidebar
+	// Draw the sidebar with a distinct background color for debugging
 	sidebarX := screenWidth - 140
-	vector.DrawFilledRect(screen, float32(sidebarX), 0, 140, screenHeight, color.RGBA{R: 50, G: 50, B: 50, A: 255}, false)
+	vector.DrawFilledRect(screen, float32(sidebarX), 0, 140, screenHeight, color.RGBA{R: 70, G: 70, B: 70, A: 255}, false)
 
-	// Draw a horizontal, thick red line where the debug area starts
-	vector.DrawFilledRect(screen, float32(sidebarX), float32(screenHeight)-float32(borderThickness), float32(borderThickness), float32(screenHeight), color.RGBA{R: 255, G: 0, B: 0, A: 255}, false)
+	// Draw a horizontal, thick red line at the top of the debug area
+	vector.DrawFilledRect(screen, float32(sidebarX), 0, float32(borderThickness), float32(screenHeight), color.RGBA{R: 255, G: 0, B: 0, A: 255}, false)
 	vector.DrawFilledRect(screen, 0, float32(screenHeight)-float32(borderThickness), float32(screenWidth), float32(borderThickness), color.White, false) // Bottom border
 	vector.DrawFilledRect(screen, 0, 0, float32(borderThickness), float32(screenHeight), color.White, false)                                             // Left border
 	vector.DrawFilledRect(screen, float32(sidebarX)-float32(borderThickness), 0, float32(borderThickness), float32(screenHeight), color.White, false)    // Right border
