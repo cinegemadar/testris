@@ -22,7 +22,6 @@ type Piece struct {
 	image           *ebiten.Image // Single image for the piece
 	currentRotation float64       // Current rotation in degrees (0, 90, 180, 270)
 	width, height   int           // Dimensions of the piece
-	color           color.Color   // Piece color
 }
 
 // Game represents the game state
@@ -49,9 +48,9 @@ func NewGame() *Game {
 	rand.Seed(time.Now().UnixNano())
 
 	// Load the piece images
-	head := &Piece{image: LoadImage("assets/head.png"), currentRotation: 0, width: 3, height: 3, color: color.RGBA{R: 255, G: 0, B: 0, A: 255}}
-	torso := &Piece{image: LoadImage("assets/torso.png"), currentRotation: 0, width: 3, height: 3, color: color.RGBA{R: 0, G: 255, B: 0, A: 255}}
-	leg := &Piece{image: LoadImage("assets/leg.png"), currentRotation: 0, width: 3, height: 3, color: color.RGBA{R: 0, G: 0, B: 255, A: 255}}
+	head := &Piece{image: LoadImage("assets/head.png"), currentRotation: 0, width: 3, height: 3}
+	torso := &Piece{image: LoadImage("assets/torso.png"), currentRotation: 0, width: 3, height: 3}
+	leg := &Piece{image: LoadImage("assets/leg.png"), currentRotation: 0, width: 3, height: 3}
 	allPieces := []*Piece{head, torso, leg}
 
 	return &Game{
@@ -182,9 +181,9 @@ func (g *Game) lockPiece() {
 // Spawn a new piece
 func (g *Game) spawnNewPiece() {
 	pieces := []*Piece{
-		{image: LoadImage("assets/head.png"), currentRotation: 0, width: 3, height: 3, color: color.RGBA{R: 255, G: 0, B: 0, A: 255}},
-		{image: LoadImage("assets/torso.png"), currentRotation: 0, width: 3, height: 3, color: color.RGBA{R: 0, G: 255, B: 0, A: 255}},
-		{image: LoadImage("assets/leg.png"), currentRotation: 0, width: 3, height: 3, color: color.RGBA{R: 0, G: 0, B: 255, A: 255}},
+		{image: LoadImage("assets/head.png"), currentRotation: 0, width: 3, height: 3},
+		{image: LoadImage("assets/torso.png"), currentRotation: 0, width: 3, height: 3},
+		{image: LoadImage("assets/leg.png"), currentRotation: 0, width: 3, height: 3},
 	}
 
 	g.activePiece = g.nextPiece
