@@ -1,11 +1,10 @@
 package main
 
-
 import (
+	"image/color"
 	"log"
 	"math"
 	"math/rand"
-	"image/color"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
@@ -28,12 +27,12 @@ type Piece struct {
 }
 
 type Game struct {
-	grid           [gridSize][gridSize]*ebiten.Image // Store image references for each grid cell
-	activePiece    *Piece
-	nextPiece      *Piece
-	pieceX, pieceY int
-	score          int
-	frameCount     int
+	grid             [gridSize][gridSize]*ebiten.Image // Store image references for each grid cell
+	activePiece      *Piece
+	nextPiece        *Piece
+	pieceX, pieceY   int
+	score            int
+	frameCount       int
 	rotateKeyPressed bool
 }
 
@@ -123,7 +122,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	op.GeoM.Scale(spriteScale, spriteScale) // Scale the sprite
 
 	// Translate to the center of the piece for rotation
-	op.GeoM.Translate(float64(g.activePiece.width*cellSize)/2, float64(g.activePiece.height*cellSize)/2)
+	// op.GeoM.Translate(float64(g.activePiece.width*cellSize)/2, float64(g.activePiece.height*cellSize)/2)
 
 	// Apply rotation around the center
 	op.GeoM.Rotate(g.activePiece.currentRotation * (math.Pi / 180))
