@@ -73,10 +73,7 @@ func (g *Game) Update() error {
 		g.pieceX++
 	}
 	if ebiten.IsKeyPressed(ebiten.KeySpace) {
-		g.activePiece.currentRotation += 90
-		if g.activePiece.currentRotation >= 360 {
-			g.activePiece.currentRotation = 0
-		}
+		g.activePiece.currentRotation = math.Mod(g.activePiece.currentRotation+90, 360)
 	}
 
 	// Drop the piece every few frames
@@ -159,7 +156,18 @@ func (g *Game) lockPiece() {
 	width := bounds.Dx()
 	height := bounds.Dy()
 
-	angle := g.activePiece.currentRotation * (3.14159265 / 180)
+	// Ensure the rotation is one of the valid discrete angles
+	validAngles := []float64{0, 90, 180, 270}
+	closestAngle := validAngles[0]
+	minDiff := math.Abs(g.activePiece.currentRotation - validAngles[0])
+	for _, angle := range validAngles {
+		diff := math.Abs(g.activePiece.currentRotation - angle)
+		if diff < minDiff {
+			minDiff = diff
+			closestAngle = angle
+		}
+	}
+	angle := closestAngle * (3.14159265 / 180)
 	cos := math.Cos(angle)
 	sin := math.Sin(angle)
 	for y := 0; y < height; y++ {
