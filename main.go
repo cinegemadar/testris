@@ -24,8 +24,6 @@ type Piece struct {
 	image           *ebiten.Image // Single image for the piece
 	currentRotation float64       // Current rotation in degrees (0, 90, 180, 270)
 	width, height   int           // Dimensions of the piece
-	moveLeftKeyPressed  bool
-	moveRightKeyPressed bool
 }
 
 func (g *Game) Reset() {
@@ -40,6 +38,8 @@ type Game struct {
 	score            int
 	frameCount       int
 	rotateKeyPressed bool
+	moveLeftKeyPressed  bool
+	moveRightKeyPressed bool
 }
 
 func LoadImage(path string) *ebiten.Image {
