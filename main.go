@@ -1,12 +1,11 @@
 package main
 
-// This package implements a simple Tetris-like game using the Ebiten library.
 
 import (
-	"image/color"
 	"log"
 	"math"
 	"math/rand"
+	"image/color"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
@@ -50,13 +49,18 @@ func LoadImage(path string) *ebiten.Image {
 	return img
 }
 
+// loadPieces returns a slice of all possible game pieces.
+func loadPieces() []*Piece {
+	return []*Piece{
+		{image: LoadImage("assets/head.png"), currentRotation: 0, width: 3, height: 3},
+		{image: LoadImage("assets/torso.png"), currentRotation: 0, width: 3, height: 3},
+		{image: LoadImage("assets/leg.png"), currentRotation: 0, width: 3, height: 3},
+	}
+}
+
 // NewGame initializes a new game with random active and next pieces.
 func NewGame() *Game {
-	// Load the piece images
-	head := &Piece{image: LoadImage("assets/head.png"), currentRotation: 0, width: 3, height: 3}
-	torso := &Piece{image: LoadImage("assets/torso.png"), currentRotation: 0, width: 3, height: 3}
-	leg := &Piece{image: LoadImage("assets/leg.png"), currentRotation: 0, width: 3, height: 3}
-	allPieces := []*Piece{head, torso, leg}
+	allPieces := loadPieces()
 
 	return &Game{
 		grid:        [gridSize][gridSize]*ebiten.Image{},
@@ -195,11 +199,7 @@ func (g *Game) lockPiece() {
 
 // spawnNewPiece selects a new active piece and a new next piece randomly.
 func (g *Game) spawnNewPiece() {
-	pieces := []*Piece{
-		{image: LoadImage("assets/head.png"), currentRotation: 0, width: 3, height: 3},
-		{image: LoadImage("assets/torso.png"), currentRotation: 0, width: 3, height: 3},
-		{image: LoadImage("assets/leg.png"), currentRotation: 0, width: 3, height: 3},
-	}
+	pieces := loadPieces()
 
 	g.activePiece = g.nextPiece
 	g.nextPiece = pieces[rand.Intn(len(pieces))]
