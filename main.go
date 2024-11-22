@@ -16,7 +16,7 @@ const (
 	screenHeight = 540
 	gridSize     = 27
 	cellSize     = 20
-	spriteScale  = 5 // Scale factor for sprites
+	spriteScale  = 10 // Scale factor for sprites
 )
 
 type Piece struct {
