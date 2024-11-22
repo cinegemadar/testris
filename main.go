@@ -12,8 +12,8 @@ import (
 )
 
 const (
-	screenWidth  = 700
-	screenHeight = 540
+	screenWidth  = 900  // Increased width for debugging
+	screenHeight = 700  // Increased height for debugging
 	gridSize     = 27
 	cellSize     = 20
 	spriteScale  = 5 // Scale factor for sprites
@@ -92,7 +92,7 @@ func (g *Game) Update() error {
 // Draw renders the game screen
 func (g *Game) Draw(screen *ebiten.Image) {
 	// Draw background
-	screen.Fill(color.RGBA{R: 0, G: 0, B: 0, A: 255}) // Black background
+	screen.Fill(color.RGBA{R: 30, G: 30, B: 30, A: 255}) // Lighter background for debugging
 
 	// Draw the sidebar
 	sidebarX := screenWidth - 140
