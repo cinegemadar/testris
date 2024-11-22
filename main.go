@@ -26,6 +26,10 @@ type Piece struct {
 	width, height   int           // Dimensions of the piece
 }
 
+func (g *Game) Reset() {
+	*g = *NewGame()
+}
+
 type Game struct {
 	grid             [gridSize][gridSize]*ebiten.Image // Store image references for each grid cell
 	activePiece      *Piece
@@ -78,7 +82,11 @@ func (g *Game) Update() error {
 			g.activePiece.currentRotation = math.Mod(g.activePiece.currentRotation+90, 360)
 			g.rotateKeyPressed = true
 		}
-	default:
+	case ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft):
+		x, y := ebiten.CursorPosition()
+		if x > screenWidth-140 && y > 160 && y < 190 {
+			g.Reset()
+		}
 		g.rotateKeyPressed = false
 	}
 
@@ -137,6 +145,9 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	op.GeoM.Scale(spriteScale, spriteScale) // Apply scaling to the next piece
 	op.GeoM.Translate(float64(sidebarX+40), 50)
 	screen.DrawImage(g.nextPiece.image, op)
+
+	// Draw restart button
+	ebitenutil.DebugPrintAt(screen, "RESTART", sidebarX+10, 160)
 
 	// Draw score
 	ebitenutil.DebugPrintAt(screen, "SCORE", sidebarX+10, 120)
