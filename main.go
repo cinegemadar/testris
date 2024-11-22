@@ -171,7 +171,7 @@ func (g *Game) lockPiece() {
 
 				// Lock this cell into the grid
 				if gridX >= 0 && gridX < gridSize && gridY >= 0 && gridY < gridSize {
-					g.grid[gridY][gridX] = g.activePiece.color
+					g.grid[gridY][gridX] = g.activePiece.image.At(x, y)
 				}
 			}
 		}
