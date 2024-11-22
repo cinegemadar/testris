@@ -26,6 +26,12 @@ type Piece struct {
 	width, height   int           // Dimensions of the piece
 }
 
+func (g *Game) resetKeyPressFlags() {
+	g.moveLeftKeyPressed = false
+	g.moveRightKeyPressed = false
+	g.rotateKeyPressed = false
+}
+
 func (g *Game) Reset() {
 	*g = *NewGame()
 }
