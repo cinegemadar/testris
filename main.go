@@ -14,12 +14,12 @@ import (
 )
 
 const (
-	borderThickness = 5.0
+	borderThickness = 10.0
 	screenWidth     = 900 // Increased width for debugging
 	screenHeight    = 700 // Increased height for debugging
 	gridSize        = 27
 	cellSize        = 20
-	spriteScale     = 5 // Scale factor for sprites
+	spriteScale     = 8 // Scale factor for sprites
 )
 
 type Piece struct {
@@ -49,7 +49,7 @@ func LoadImage(path string) *ebiten.Image {
 	return img
 }
 
- // NewGame initializes a new game with random active and next pieces.
+// NewGame initializes a new game with random active and next pieces.
 func NewGame() *Game {
 	// Load the piece images
 	head := &Piece{image: LoadImage("assets/head.png"), currentRotation: 0, width: 3, height: 3}
@@ -66,7 +66,7 @@ func NewGame() *Game {
 	}
 }
 
- // Update handles the game logic, including user input and piece movement.
+// Update handles the game logic, including user input and piece movement.
 func (g *Game) Update() error {
 	g.frameCount++
 
@@ -94,7 +94,7 @@ func (g *Game) Update() error {
 	return nil
 }
 
- // Draw renders the game screen, including the grid, active piece, next piece, and score.
+// Draw renders the game screen, including the grid, active piece, next piece, and score.
 func (g *Game) Draw(screen *ebiten.Image) {
 	screen.Fill(color.RGBA{R: 30, G: 30, B: 30, A: 255}) // Lighter background for debugging
 
@@ -139,12 +139,12 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	ebitenutil.DebugPrintAt(screen, string(rune(g.score)), sidebarX+10, 140)
 }
 
- // Layout determines the size of the screen for the game.
+// Layout determines the size of the screen for the game.
 func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
 	return screenWidth, screenHeight
 }
 
- // canMove checks if the active piece can move in the specified direction (dx, dy).
+// canMove checks if the active piece can move in the specified direction (dx, dy).
 func (g *Game) canMove(dx, dy int) bool {
 	newX, newY := g.pieceX+dx, g.pieceY+dy
 
@@ -162,14 +162,13 @@ func (g *Game) canMove(dx, dy int) bool {
 	return true
 }
 
- // lockPiece locks the current active piece into the grid at its current position.
+// lockPiece locks the current active piece into the grid at its current position.
 func (g *Game) lockPiece() {
 	// Create a new image to represent the locked piece
 	lockedPieceImage := ebiten.NewImage(g.activePiece.width*cellSize, g.activePiece.height*cellSize)
 
 	// Draw the active piece onto the locked piece image with the correct transformations
 	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Scale(1, 1) // No additional scaling needed for locked pieces
 	op.GeoM.Rotate(g.activePiece.currentRotation * (math.Pi / 180))
 	op.GeoM.Translate(float64(g.activePiece.width*cellSize/2), float64(g.activePiece.height*cellSize/2))
 	lockedPieceImage.DrawImage(g.activePiece.image, op)
@@ -178,12 +177,9 @@ func (g *Game) lockPiece() {
 	if g.pieceX >= 0 && g.pieceX < gridSize && g.pieceY >= 0 && g.pieceY < gridSize {
 		g.grid[g.pieceY][g.pieceX] = lockedPieceImage
 	}
-
-	g.score++
-	g.score++
 }
 
- // spawnNewPiece selects a new active piece and a new next piece randomly.
+// spawnNewPiece selects a new active piece and a new next piece randomly.
 func (g *Game) spawnNewPiece() {
 	pieces := []*Piece{
 		{image: LoadImage("assets/head.png"), currentRotation: 0, width: 3, height: 3},
