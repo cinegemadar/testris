@@ -194,10 +194,24 @@ func (g *Game) canMove(dx, dy int) bool {
 	// Check bounds and collisions
 	for y := 0; y < g.activePiece.height; y++ {
 		for x := 0; x < g.activePiece.width; x++ {
-			if newX+x < 0 || newX+x >= gridSize || newY+y >= gridSize {
+			// Calculate the rotated position
+			rotatedX, rotatedY := x, y
+			switch g.activePiece.currentRotation {
+			case 90:
+				rotatedX, rotatedY = y, g.activePiece.width-1-x
+			case 180:
+				rotatedX, rotatedY = g.activePiece.width-1-x, g.activePiece.height-1-y
+			case 270:
+				rotatedX, rotatedY = g.activePiece.height-1-y, x
+			}
+
+			// Check bounds
+			if newX+rotatedX < 0 || newX+rotatedX >= gridSize || newY+rotatedY >= gridSize {
 				return false
 			}
-			if g.grid[newY+y][newX+x] != nil {
+
+			// Check collision
+			if g.grid[newY+rotatedY][newX+rotatedX] != nil {
 				return false
 			}
 		}
