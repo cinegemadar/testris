@@ -37,6 +37,7 @@ type Game struct {
 	pieceX, pieceY int
 	score          int
 	frameCount     int
+	rotateKeyPressed bool
 }
 
 // LoadImage loads an image from a file and returns it as an *ebiten.Image.
@@ -78,7 +79,12 @@ func (g *Game) Update() error {
 		g.pieceX++
 	}
 	if ebiten.IsKeyPressed(ebiten.KeySpace) {
-		g.activePiece.currentRotation = math.Mod(g.activePiece.currentRotation+90, 360)
+		if !g.rotateKeyPressed {
+			g.activePiece.currentRotation = math.Mod(g.activePiece.currentRotation+90, 360)
+			g.rotateKeyPressed = true
+		}
+	} else {
+		g.rotateKeyPressed = false
 	}
 
 	// Drop the piece every few frames
