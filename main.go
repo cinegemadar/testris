@@ -188,11 +188,8 @@ func (g *Game) drawLockedPieces(screen *ebiten.Image) {
 		topLeftX := float64(lp.x * cellSize)
 		topLeftY := float64(lp.y * cellSize)
 
-		// Translate to the top-left corner
-		op.GeoM.Translate(topLeftX, topLeftY)
-
 		// Move to the center of the piece, rotate, and move back
-		op.GeoM.Translate(float64(lp.piece.width*cellSize)/2, float64(lp.piece.height*cellSize)/2)
+		op.GeoM.Translate(topLeftX+float64(lp.piece.width*cellSize)/2, topLeftY+float64(lp.piece.height*cellSize)/2)
 		op.GeoM.Rotate(getRotationTheta(lp.piece.currentRotation))
 		op.GeoM.Translate(-float64(lp.piece.width*cellSize)/2, -float64(lp.piece.height*cellSize)/2)
 
