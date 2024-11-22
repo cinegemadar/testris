@@ -184,14 +184,17 @@ func (g *Game) drawLockedPieces(screen *ebiten.Image) {
 
 		op := &ebiten.DrawImageOptions{}
 		op.GeoM.Scale(spriteScale, spriteScale) // Scale the sprite
-		// Center of the square in screen coordinates
-		centerX := float64((lp.x*cellSize + cellSize/2) + (g.activePiece.width*cellSize)/2)
-		centerY := float64((lp.y*cellSize + cellSize/2) + (g.activePiece.height*cellSize)/2)
+		// Calculate the top-left corner of the piece in screen coordinates
+		topLeftX := float64(lp.x * cellSize)
+		topLeftY := float64(lp.y * cellSize)
 
-		// Translate to the center, rotate, and translate back
-		op.GeoM.Translate(-float64(g.activePiece.width*cellSize)/2, -float64(cellSize)/2) // Move to the center of the square
-		op.GeoM.Rotate(getRotationTheta(lp.piece.currentRotation))                        // Apply the stored rotation
-		op.GeoM.Translate(centerX, centerY)                                               // Move to the locked position
+		// Translate to the top-left corner, rotate around the center, and translate back
+		op.GeoM.Translate(topLeftX, topLeftY) // Move to the top-left corner of the piece
+		op.GeoM.Translate(float64(lp.piece.width*cellSize)/2, float64(lp.piece.height*cellSize)/2) // Move to the center of the piece
+		op.GeoM.Rotate(getRotationTheta(lp.piece.currentRotation)) // Apply the stored rotation
+		op.GeoM.Translate(-float64(lp.piece.width*cellSize)/2, -float64(lp.piece.height*cellSize)/2) // Move back to the top-left corner
+
+		screen.DrawImage(lp.piece.image, op)
 
 		screen.DrawImage(lp.piece.image, op)
 	}
