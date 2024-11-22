@@ -129,7 +129,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	op.GeoM.Rotate(g.activePiece.currentRotation * (math.Pi / 180))
 
 	// Translate back to the piece's position on the grid
-	op.GeoM.Translate(float64(g.pieceX*cellSize), float64(g.pieceY*cellSize))
+	op.GeoM.Translate(float64(g.pieceX*cellSize)-float64(g.activePiece.width*cellSize)/2, float64(g.pieceY*cellSize)-float64(g.activePiece.height*cellSize)/2)
 	screen.DrawImage(g.activePiece.image, op)
 
 	// Draw "Next Piece"
