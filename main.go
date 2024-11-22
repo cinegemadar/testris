@@ -102,7 +102,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	borderThickness := 5.0
 	vector.DrawFilledRect(screen, 0, float32(screenHeight)-float32(borderThickness), float32(screenWidth), float32(borderThickness), color.White, false)   // Bottom border
 	vector.DrawFilledRect(screen, 0, 0, float32(borderThickness), float32(screenHeight), color.White, false)                                               // Left border
-	vector.DrawFilledRect(screen, float32(screenWidth)-float32(borderThickness)-1, 0, float32(borderThickness), float32(screenHeight), color.White, false) // Right border
+	vector.DrawFilledRect(screen, float32(sidebarX)-float32(borderThickness), 0, float32(borderThickness), float32(screenHeight), color.White, false) // Right border
 	for y := 0; y < gridSize; y++ {
 		for x := 0; x < gridSize; x++ {
 			if g.grid[y][x] != nil {
