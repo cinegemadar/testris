@@ -106,32 +106,6 @@ func (g *Game) Update() error {
 	default:
 		g.resetKeyPressFlagsExcept(``)
 
-		// case ebiten.IsKeyPressed(ebiten.KeyArrowLeft) && !g.moveLeftKeyPressed:
-		// 	if !g.moveLeftKeyPressed && g.canMove(-1, 0) {
-		// 		g.pieceX--
-		// 		g.moveLeftKeyPressed = true
-		// 	}
-		// case !ebiten.IsKeyPressed(ebiten.KeyArrowLeft):
-		// 	g.moveLeftKeyPressed = false
-		// case ebiten.IsKeyPressed(ebiten.KeyArrowRight):
-		// 	if !g.moveRightKeyPressed && g.canMove(1, 0) {
-		// 		g.pieceX++
-		// 		g.moveRightKeyPressed = true
-		// 	}
-		// case !ebiten.IsKeyPressed(ebiten.KeyArrowRight):
-		// 	g.moveRightKeyPressed = false
-		// case ebiten.IsKeyPressed(ebiten.KeySpace) && !g.rotateKeyPressed:
-		// 	if !g.rotateKeyPressed {
-		// 		g.activePiece.currentRotation = math.Mod(g.activePiece.currentRotation+90, 360)
-		// 		g.rotateKeyPressed = true
-		// 	}
-		// case !ebiten.IsKeyPressed(ebiten.KeySpace):
-		// 	g.rotateKeyPressed = false
-		// 	x, y := ebiten.CursorPosition()
-		// 	if x > screenWidth-140 && y > 160 && y < 190 {
-		// 		g.Reset()
-		// 	}
-		// 	g.rotateKeyPressed = false
 	}
 
 	// Drop the piece every few frames
