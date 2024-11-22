@@ -14,8 +14,8 @@ import (
 
 const (
 	borderThickness = 10.0
-	screenWidth     = 900 // Increased width for debugging
-	screenHeight    = 700 // Increased height for debugging
+	screenWidth     = 800
+	screenHeight    = 600
 	gridSize        = 27
 	cellSize        = 20
 	spriteScale     = 8 // Scale factor for sprites
@@ -103,8 +103,6 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	sidebarX := screenWidth - 140
 	vector.DrawFilledRect(screen, float32(sidebarX), 0, 140, screenHeight, color.RGBA{R: 70, G: 70, B: 70, A: 255}, false)
 
-	// Draw a horizontal, thick red line at the top of the debug area
-	vector.DrawFilledRect(screen, float32(sidebarX), 0, float32(borderThickness), float32(screenHeight), color.RGBA{R: 255, G: 0, B: 0, A: 255}, false)
 	vector.DrawFilledRect(screen, 0, float32(screenHeight)-float32(borderThickness), float32(screenWidth), float32(borderThickness), color.White, false) // Bottom border
 	vector.DrawFilledRect(screen, 0, 0, float32(borderThickness), float32(screenHeight), color.White, false)                                             // Left border
 	vector.DrawFilledRect(screen, float32(sidebarX)-float32(borderThickness), 0, float32(borderThickness), float32(screenHeight), color.White, false)    // Right border
