@@ -151,7 +151,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 			if g.grid[y][x] != nil {
 				op := &ebiten.DrawImageOptions{}
 				op.GeoM.Scale(spriteScale, spriteScale) // Apply scaling to locked pieces
-				op.GeoM.Translate(float32(x*cellSize), float32(y*cellSize))
+				op.GeoM.Translate(float64(x*cellSize), float64(y*cellSize))
 				op.GeoM.Translate(-float32(g.grid[y][x].Bounds().Dx())/2, -float32(g.grid[y][x].Bounds().Dy())/2) // Center rotation
 				screen.DrawImage(g.grid[y][x], op)
 			}
