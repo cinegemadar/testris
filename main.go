@@ -28,23 +28,19 @@ type Piece struct {
 
 func (g *Game) resetKeyPressFlagsExcept(except ...string) {
 
-	switch {
-	case _ == "moveLeftKeyPressed":
-		g.moveLeftKeyPressed = true
-		g.moveRightKeyPressed = false
-		g.rotateKeyPressed = false
-	case "moveRightKeyPressed":
-		g.moveLeftKeyPressed = false
-		g.moveRightKeyPressed = true
-		g.rotateKeyPressed = false
-	case "rotateKeyPressed":
-		g.moveLeftKeyPressed = false
-		g.moveRightKeyPressed = false
-		g.rotateKeyPressed = true
-	default:
-		g.moveLeftKeyPressed = false
-		g.moveRightKeyPressed = false
-		g.rotateKeyPressed = false
+	g.moveLeftKeyPressed = false
+	g.moveRightKeyPressed = false
+	g.rotateKeyPressed = false
+
+	for _, flag := range except {
+		switch flag {
+		case "moveLeftKeyPressed":
+			g.moveLeftKeyPressed = true
+		case "moveRightKeyPressed":
+			g.moveRightKeyPressed = true
+		case "rotateKeyPressed":
+			g.rotateKeyPressed = true
+		}
 	}
 
 }
