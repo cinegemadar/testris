@@ -192,22 +192,27 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
 
 func (g *Game) canMove(dx, dy int) bool {
 	newX, newY := g.pieceX+dx, g.pieceY+dy
+	within_border := true
+	within_border = within_border && newX > 0+borderThickness
+	within_border = within_border && newX+3 < gridSize-borderThickness
+	within_border = within_border && newY > 0+borderThickness
+	within_border = within_border && newY+3 < gridSize-borderThickness
 
-	// Ensure the 3x3 bounding box is within the grid boundaries
-	if newX < int(borderThickness)/cellSize || newX+g.activePiece.width > gridSize-int(borderThickness)/cellSize || newY+g.activePiece.height > gridSize-int(borderThickness)/cellSize {
-		return false
-	}
+	// // Ensure the 3x3 bounding box is within the grid boundaries
+	// if newX < int(borderThickness)/cellSize || newX+g.activePiece.width > gridSize-int(borderThickness)/cellSize || newY+g.activePiece.height > gridSize-int(borderThickness)/cellSize {
+	// 	return false
+	// }
 
-	// Check for collisions within the 3x3 bounding box
-	for y := 0; y < 3; y++ {
-		for x := 0; x < 3; x++ {
-			if g.grid[newY+y][newX+x] != nil {
-				return false
-			}
-		}
-	}
+	// // Check for collisions within the 3x3 bounding box
+	// for y := 0; y < 3; y++ {
+	// 	for x := 0; x < 3; x++ {
+	// 		if g.grid[newY+y][newX+x] != nil {
+	// 			return false
+	// 		}
+	// 	}
+	// }
 
-	return true
+	return within_border
 }
 
 func (g *Game) lockPiece() {
