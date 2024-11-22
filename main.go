@@ -108,6 +108,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		for x := 0; x < gridSize; x++ {
 			if g.grid[y][x] != nil {
 				op := &ebiten.DrawImageOptions{}
+				op.GeoM.Scale(spriteScale, spriteScale) // Apply scaling to locked pieces
 				op.GeoM.Translate(float64(x*cellSize), float64(y*cellSize))
 				screen.DrawImage(g.grid[y][x], op)
 			}
