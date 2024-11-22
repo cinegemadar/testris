@@ -106,7 +106,9 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	for y := 0; y < gridSize; y++ {
 		for x := 0; x < gridSize; x++ {
 			if g.grid[y][x] != nil {
-				vector.DrawFilledRect(screen, float32(x*cellSize), float32(y*cellSize), float32(cellSize), float32(cellSize), g.grid[y][x], false)
+				op := &ebiten.DrawImageOptions{}
+				op.GeoM.Translate(float64(x*cellSize), float64(y*cellSize))
+				screen.DrawImage(g.grid[y][x].(*ebiten.Image), op)
 			}
 		}
 	}
@@ -187,7 +189,7 @@ func (g *Game) lockPiece() {
 			if a > 0 { // Non-transparent pixel
 				// Lock this cell into the grid
 				if gridX >= 0 && gridX < gridSize && gridY >= 0 && gridY < gridSize {
-					g.grid[gridY][gridX] = g.activePiece.image.At(x, y)
+					g.grid[gridY][gridX] = g.activePiece.image
 				}
 			}
 		}
