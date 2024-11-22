@@ -31,13 +31,13 @@ func (g *Game) Reset() {
 }
 
 type Game struct {
-	grid             [gridSize][gridSize]*ebiten.Image // Store image references for each grid cell
-	activePiece      *Piece
-	nextPiece        *Piece
-	pieceX, pieceY   int
-	score            int
-	frameCount       int
-	rotateKeyPressed bool
+	grid                [gridSize][gridSize]*ebiten.Image // Store image references for each grid cell
+	activePiece         *Piece
+	nextPiece           *Piece
+	pieceX, pieceY      int
+	score               int
+	frameCount          int
+	rotateKeyPressed    bool
 	moveLeftKeyPressed  bool
 	moveRightKeyPressed bool
 }
@@ -70,37 +70,48 @@ func NewGame() *Game {
 	}
 }
 
+
 func (g *Game) Update() error {
 	g.frameCount++
 
 	// Handle user input using a switch case
 	switch {
 	case ebiten.IsKeyPressed(ebiten.KeyArrowLeft) && !g.moveLeftKeyPressed:
-		if !g.moveLeftKeyPressed && g.canMove(-1, 0) {
-			g.pieceX--
-			g.moveLeftKeyPressed = true
-		}
-	case !ebiten.IsKeyPressed(ebiten.KeyArrowLeft):
-		g.moveLeftKeyPressed = false
-	case ebiten.IsKeyPressed(ebiten.KeyArrowRight):
-		if !g.moveRightKeyPressed && g.canMove(1, 0) {
-			g.pieceX++
-			g.moveRightKeyPressed = true
-		}
-	case !ebiten.IsKeyPressed(ebiten.KeyArrowRight):
+		g.moveLeftKeyPressed = true
+		g.pieceX--
 		g.moveRightKeyPressed = false
-	case ebiten.IsKeyPressed(ebiten.KeySpace) && !g.rotateKeyPressed:
-		if !g.rotateKeyPressed {
-			g.activePiece.currentRotation = math.Mod(g.activePiece.currentRotation+90, 360)
-			g.rotateKeyPressed = true
-		}
-	case !ebiten.IsKeyPressed(ebiten.KeySpace):
 		g.rotateKeyPressed = false
-		x, y := ebiten.CursorPosition()
-		if x > screenWidth-140 && y > 160 && y < 190 {
-			g.Reset()
-		}
-		g.rotateKeyPressed = false
+	case ebiten.IsKeyPressed(ebiten.KeyArrowRight) && !g.moveRightKeyPressed:
+		g.moveRightKeyPressed = true
+		g.pieceY--
+		g.moveLeftKeyPressed = false
+		g.
+		// case ebiten.IsKeyPressed(ebiten.KeyArrowLeft) && !g.moveLeftKeyPressed:
+		// 	if !g.moveLeftKeyPressed && g.canMove(-1, 0) {
+		// 		g.pieceX--
+		// 		g.moveLeftKeyPressed = true
+		// 	}
+		// case !ebiten.IsKeyPressed(ebiten.KeyArrowLeft):
+		// 	g.moveLeftKeyPressed = false
+		// case ebiten.IsKeyPressed(ebiten.KeyArrowRight):
+		// 	if !g.moveRightKeyPressed && g.canMove(1, 0) {
+		// 		g.pieceX++
+		// 		g.moveRightKeyPressed = true
+		// 	}
+		// case !ebiten.IsKeyPressed(ebiten.KeyArrowRight):
+		// 	g.moveRightKeyPressed = false
+		// case ebiten.IsKeyPressed(ebiten.KeySpace) && !g.rotateKeyPressed:
+		// 	if !g.rotateKeyPressed {
+		// 		g.activePiece.currentRotation = math.Mod(g.activePiece.currentRotation+90, 360)
+		// 		g.rotateKeyPressed = true
+		// 	}
+		// case !ebiten.IsKeyPressed(ebiten.KeySpace):
+		// 	g.rotateKeyPressed = false
+		// 	x, y := ebiten.CursorPosition()
+		// 	if x > screenWidth-140 && y > 160 && y < 190 {
+		// 		g.Reset()
+		// 	}
+		// 	g.rotateKeyPressed = false
 	}
 
 	// Drop the piece every few frames
