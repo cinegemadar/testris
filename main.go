@@ -45,6 +45,21 @@ type Piece struct {
 }
 
 /*
+saveScore appends the current score to the highscore.txt file.
+*/
+func (g *Game) saveScore(score int) {
+	file, err := os.OpenFile("highscore.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		log.Printf("Failed to open high score file: %v", err)
+		return
+	}
+	defer file.Close()
+
+	if _, err := file.WriteString(fmt.Sprintf("%d\n", score)); err != nil {
+		log.Printf("Failed to write score: %v", err)
+	}
+
+/*
 loadTopScores loads and returns the top 5 scores from the highscore.txt file.
 */
 func (g *Game) loadTopScores() []int {
@@ -84,10 +99,10 @@ endGame handles the end of the game, saving the score and checking for a new hig
 */
 func (g *Game) endGame() {
 	g.gameOver = true
-	highScore := g.loadHighScore()
+	// Save the current score to the highscore file
+	g.saveScore(g.score)
 
-	if g.score >= highScore {
-		g.saveHighScore(g.score)
+	if g.score >= g.loadHighScore() {
 		ebitenutil.DebugPrintAt(ebiten.NewImage(screenWidth, screenHeight), "New High Score!", screenWidth/2-50, screenHeight/2+40)
 		log.Println("New high score achieved!")
 	}
