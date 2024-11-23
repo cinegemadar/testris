@@ -3,7 +3,11 @@ package main
 import (
 	"fmt"
 	"image/color"
+	"io/ioutil"
 	"log"
+	"sort"
+	"strconv"
+	"strings"
 	"math"
 	"math/rand"
 	"os"
@@ -38,6 +42,40 @@ type Piece struct {
 	piece_type      string        // Head, Torso, Leg
 	x, y            int           // Position of the piece
 	highScore       int
+}
+
+/*
+loadTopScores loads and returns the top 5 scores from the highscore.txt file.
+*/
+func (g *Game) loadTopScores() []int {
+	data, err := ioutil.ReadFile("highscore.txt")
+	if err != nil {
+		if os.IsNotExist(err) {
+			return []int{}
+		}
+		log.Printf("Failed to read high scores: %v", err)
+		return []int{}
+	}
+
+	// Parse scores from file
+	scoreStrings := strings.Split(string(data), "\n")
+	var scores []int
+	for _, scoreStr := range scoreStrings {
+		if scoreStr == "" {
+			continue
+		}
+		score, err := strconv.Atoi(scoreStr)
+		if err == nil {
+			scores = append(scores, score)
+		}
+	}
+
+	// Sort scores in descending order and return top 5
+	sort.Sort(sort.Reverse(sort.IntSlice(scores)))
+	if len(scores) > 5 {
+		scores = scores[:5]
+	}
+	return scores
 }
 
 /*
@@ -302,7 +340,14 @@ func (g *Game) drawSidebar(screen *ebiten.Image) {
 	// Draw restart button
 	ebitenutil.DebugPrintAt(screen, "RESTART", sidebarX+10, 160)
 
-	// Draw score
+	// Draw top 5 scores
+	ebitenutil.DebugPrintAt(screen, "TOP 5 SCORES", sidebarX+10, 200)
+	topScores := g.loadTopScores()
+	for i, score := range topScores {
+		ebitenutil.DebugPrintAt(screen, fmt.Sprintf("%d: %d", i+1, score), sidebarX+10, 220+i*20)
+	}
+
+	// Draw current score
 	ebitenutil.DebugPrintAt(screen, "SCORE", sidebarX+10, 120)
 	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("%d", g.score), sidebarX+10, 140)
 }
