@@ -253,7 +253,7 @@ func (g *Game) canMove(dx, dy int) bool {
 	newY := g.pieceY + dy
 
 	// Ensure the piece stays within bounds
-	if newX < 0 || newX+g.activePiece.width > gridSize+borderThickness {
+	if newX < 0 || newX+g.activePiece.width > gridSize {
 		return false
 	}
 	if newY < 0 || newY+g.activePiece.height > gridSize {
