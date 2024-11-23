@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"image/color"
-	"io/ioutil"
+	"os"
 	"log"
 	"math"
 	"math/rand"
@@ -72,7 +72,7 @@ saveHighScore saves the high score to a file.
 */
 func (g *Game) saveHighScore(score int) {
 	data := []byte(fmt.Sprintf("%d", score))
-	ioutil.WriteFile("highscore.txt", data, 0644)
+	os.WriteFile("highscore.txt", data, 0644)
 }
 
 type Game struct {
