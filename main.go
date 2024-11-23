@@ -164,15 +164,14 @@ Returns:
 func (g *Game) Update() error {
 	g.frameCount++
 
-	if g.gameOver {
-		return nil
-	}
+	g.restart() // Always check for restart
 
-	g.moveLeft()
-	g.moveRight()
-	g.rotate()
-	g.restart()
-	g.drop()
+	if !g.gameOver {
+		g.moveLeft()
+		g.moveRight()
+		g.rotate()
+		g.drop()
+	}
 
 	return nil
 }
