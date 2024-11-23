@@ -90,6 +90,15 @@ func (g *Game) Update() error {
 	g.moveRight()
 	g.rotate()
 
+	// Check for mouse click to restart the game
+	if ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) {
+		x, y := ebiten.CursorPosition()
+		sidebarX := screenWidth - sidebarWidth
+		if x >= sidebarX+10 && x <= sidebarX+110 && y >= 160 && y <= 180 {
+			g.Reset()
+		}
+	}
+
 	// Drop the piece every few frames
 	g.drop()
 
