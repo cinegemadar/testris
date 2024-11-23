@@ -190,6 +190,8 @@ func (g *Game) drawSidebar(screen *ebiten.Image) {
 	ebitenutil.DebugPrintAt(screen, "SCORE", sidebarX+10, 120)
 	ebitenutil.DebugPrintAt(screen, string(rune(g.score)), sidebarX+10, 140)
 }
+
+func (g *Game) drawLockedPieces(screen *ebiten.Image) {
 	for _, lp := range g.lockedPieces {
 		op := &ebiten.DrawImageOptions{}
 
