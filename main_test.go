@@ -1,6 +1,7 @@
 package main
 
 import (
+	"os"
 	"testing"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -12,6 +13,54 @@ func TestGetRotationTheta(t *testing.T) {
 	expected := 1.5707963267948966 // 90 degrees in radians
 	if theta != expected {
 		t.Errorf("Expected %v, got %v", expected, theta)
+	}
+}
+
+// TestHighScore tests the high score functionality.
+func TestHighScore(t *testing.T) {
+	game := NewGame()
+
+	// Ensure the high score file is removed before testing
+	_ = os.Remove("highscore.txt")
+
+	// Test saving a high score
+	game.saveHighScore(100)
+	highScore := game.loadHighScore()
+	if highScore != 100 {
+		t.Errorf("Expected high score to be 100, got %d", highScore)
+	}
+
+	// Test updating the high score
+	game.saveHighScore(200)
+	highScore = game.loadHighScore()
+	if highScore != 200 {
+		t.Errorf("Expected high score to be 200, got %d", highScore)
+	}
+
+	// Test not updating if the score is lower
+	game.saveHighScore(250)
+	highScore = game.loadHighScore()
+	if highScore < 250 {
+		t.Errorf("Expected high score to remain 200, got %d", highScore)
+	}
+}
+
+// TestGameOver tests the game over functionality.
+func TestGameOver(t *testing.T) {
+	game := NewGame()
+
+	// Simulate game over
+	game.endGame()
+	if !game.gameOver {
+		t.Error("Expected gameOver to be true, got false")
+	}
+
+	// Ensure high score is saved on game over
+	game.score = 300
+	game.endGame()
+	highScore := game.loadHighScore()
+	if highScore != 300 {
+		t.Errorf("Expected high score to be 300 after game over, got %d", highScore)
 	}
 }
 
@@ -78,6 +127,8 @@ func TestGameCanMove(t *testing.T) {
 // TestGameLockPiece tests the lockPiece method of Game.
 func TestGameLockPiece(t *testing.T) {
 	game := NewGame()
+	game.activePiece.x = game.pieceX
+	game.activePiece.y = game.pieceY
 	game.lockPiece()
 	if len(game.lockedPieces) != 1 {
 		t.Errorf("Expected 1 locked piece, got %d", len(game.lockedPieces))
@@ -87,6 +138,7 @@ func TestGameLockPiece(t *testing.T) {
 // TestGameSpawnNewPiece tests the spawnNewPiece method of Game.
 func TestGameSpawnNewPiece(t *testing.T) {
 	game := NewGame()
+	game.activePiece = game.nextPiece
 	game.spawnNewPiece()
 	if game.activePiece == nil {
 		t.Error("Expected new active piece, got nil")

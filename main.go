@@ -1,10 +1,12 @@
 package main
 
 import (
+	"fmt"
 	"image/color"
 	"log"
 	"math"
 	"math/rand"
+	"os"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
@@ -35,6 +37,48 @@ type Piece struct {
 	width, height   int           // Dimensions of the piece
 	piece_type      string        // Head, Torso, Leg
 	x, y            int           // Position of the piece
+	highScore       int
+}
+
+/*
+endGame handles the end of the game, saving the score and checking for a new high score.
+*/
+func (g *Game) endGame() {
+	g.gameOver = true
+	highScore := g.loadHighScore()
+
+	if g.score > highScore {
+		g.saveHighScore(g.score)
+		ebitenutil.DebugPrintAt(ebiten.NewImage(screenWidth, screenHeight), "New High Score!", screenWidth/2-50, screenHeight/2+40)
+		log.Println("New high score achieved!")
+	}
+}
+
+/*
+loadHighScore loads the high score from a file.
+*/
+func (g *Game) loadHighScore() int {
+	data, err := os.ReadFile("highscore.txt")
+	if err != nil {
+		// If the file doesn't exist, create it with a default high score of 0
+		if os.IsNotExist(err) {
+			os.WriteFile("highscore.txt", []byte("0"), 0644)
+			return 0
+		}
+		log.Printf("Failed to read high score: %v", err)
+	}
+
+	var highScore int
+	fmt.Sscanf(string(data), "%d", &highScore)
+	return highScore
+}
+
+/*
+saveHighScore saves the high score to a file.
+*/
+func (g *Game) saveHighScore(score int) {
+	data := []byte(fmt.Sprintf("%d", score))
+	os.WriteFile("highscore.txt", data, 0644)
 }
 
 type Game struct {
@@ -45,6 +89,7 @@ type Game struct {
 	pieceX, pieceY      int // Position of the active piece
 	score               int
 	frameCount          int
+	gameOver            bool
 	rotateKeyPressed    bool
 	moveLeftKeyPressed  bool
 	moveRightKeyPressed bool
@@ -125,17 +170,14 @@ Returns:
 func (g *Game) Update() error {
 	g.frameCount++
 
-	// Handle user input for single actions per key press.
-	// This is a chain of responsibility; not all actions below are triggered in each iteration.
-	g.moveLeft()
-	g.moveRight()
-	g.rotate()
+	g.restart() // Always check for restart
 
-	// Check for mouse click to restart the game
-	g.restart()
-
-	// Drop the piece every few frames
-	g.drop()
+	if !g.gameOver {
+		g.moveLeft()
+		g.moveRight()
+		g.rotate()
+		g.drop()
+	}
 
 	return nil
 }
@@ -220,26 +262,23 @@ Parameters:
 - screen: The ebiten.Image to draw the game state onto.
 */
 func (g *Game) Draw(screen *ebiten.Image) {
-	screen.Fill(backgroundColor) // Lighter background
+	// Fill only the game area with the background color
+	vector.DrawFilledRect(screen, 0, 0, float32(screenWidth-sidebarWidth), float32(screenHeight), backgroundColor, false)
 
-	// Draw the sidebar.
+	if g.gameOver {
+		ebitenutil.DebugPrintAt(screen, "GAME OVER", screenWidth/2-50, screenHeight/2)
+		ebitenutil.DebugPrintAt(screen, fmt.Sprintf("Score: %d", g.score), screenWidth/2-50, screenHeight/2+20)
+	}
+
 	sidebarX := screenWidth - sidebarWidth
 	vector.DrawFilledRect(screen, float32(sidebarX), 0, sidebarWidth, screenHeight, sidebarColor, false)
-
-	// Draw the border around the game area.
 	drawBorder(screen)
-
-	// Draw the locked pieces.
 	g.drawLockedPieces(screen)
-
-	// Draw the bounding box around the active piece.
 	g.drawBoundingBox(screen)
 
 	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Scale(spriteScale, spriteScale) // Scale the sprite
-
+	op.GeoM.Scale(spriteScale, spriteScale)
 	g.applyRotation(op, screen)
-
 	g.drawSidebar(screen)
 }
 
@@ -265,7 +304,7 @@ func (g *Game) drawSidebar(screen *ebiten.Image) {
 
 	// Draw score
 	ebitenutil.DebugPrintAt(screen, "SCORE", sidebarX+10, 120)
-	ebitenutil.DebugPrintAt(screen, string(rune(g.score)), sidebarX+10, 140)
+	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("%d", g.score), sidebarX+10, 140)
 }
 
 /*
@@ -400,12 +439,9 @@ lockPiece locks the active piece in its current position on the grid,
 adding it to the list of locked pieces.
 */
 func (g *Game) lockPiece() {
-	// Create a copy of the active piece with its current state
 	lockedPiece := *g.activePiece
 	lockedPiece.x = g.pieceX
 	lockedPiece.y = g.pieceY
-
-	// Append the locked piece to the array
 	g.lockedPieces = append(g.lockedPieces, &lockedPiece)
 }
 
@@ -414,6 +450,11 @@ spawnNewPiece selects a new active piece from the available pieces and
 positions it at the top of the grid.
 */
 func (g *Game) spawnNewPiece() {
+	if g.pieceY == 0 && !g.canMove(0, 1) {
+		g.endGame()
+		return
+	}
+
 	pieces := loadPieces()
 
 	g.activePiece = g.nextPiece
