@@ -129,8 +129,8 @@ Returns:
 func (g *Game) Update() error {
 	g.frameCount++
 
-	// Handle user input for single actions per key press
-	// This is a **chain of responsibility**! not all actions below are triggerd in each iteration.
+	// Handle user input for single actions per key press.
+	// This is a chain of responsibility; not all actions below are triggered in each iteration.
 	g.moveLeft()
 	g.moveRight()
 	g.rotate()
@@ -226,18 +226,18 @@ Parameters:
 func (g *Game) Draw(screen *ebiten.Image) {
 	screen.Fill(backgroundColor) // Lighter background
 
-	// Draw the sidebar
+	// Draw the sidebar.
 	sidebarX := screenWidth - sidebarWidth
 	vector.DrawFilledRect(screen, float32(sidebarX), 0, sidebarWidth, screenHeight, sidebarColor, false)
 
-	// Draw  border around the game area
-	drawBorder(screen) // Right border
+	// Draw the border around the game area.
+	drawBorder(screen)
 
-	// Draw the locked piece
+	// Draw the locked pieces.
 	g.drawLockedPieces(screen)
 
-	// Draw the bounding box around the active piece
-	g.drawBoundingBox(screen) // Right border
+	// Draw the bounding box around the active piece.
+	g.drawBoundingBox(screen)
 
 	op := &ebiten.DrawImageOptions{}
 	op.GeoM.Scale(spriteScale, spriteScale) // Scale the sprite
@@ -282,13 +282,13 @@ func (g *Game) drawLockedPieces(screen *ebiten.Image) {
 	for _, lp := range g.lockedPieces {
 		op := &ebiten.DrawImageOptions{}
 
-		// Scale the locked piece using spriteScale (consistent with active piece scaling)
+			// Scale the locked piece using spriteScale (consistent with active piece scaling).
 		// op.GeoM.Scale(
 		// 	float64(spriteScale)/float64(lp.piece.image.Bounds().Dx()),
 		// 	float64(spriteScale)/float64(lp.piece.image.Bounds().Dy()),
 		// )
 
-		// Calculate the center of the locked piece in screen coordinates
+		// Calculate the center of the locked piece in screen coordinates.
 		centerX := float64(lp.x*cellSize) + float64(cellSize)/2
 		centerY := float64(lp.y*cellSize) + float64(cellSize)/2
 
@@ -296,12 +296,12 @@ func (g *Game) drawLockedPieces(screen *ebiten.Image) {
 			float64(spriteScale),
 			float64(spriteScale),
 		)
-		// Translate to the center, rotate, and translate back
-		op.GeoM.Translate(-float64(cellSize)/2, -float64(cellSize)/2) // Move to the center
-		op.GeoM.Rotate(getRotationTheta(lp.piece.currentRotation))    // Apply rotation
-		op.GeoM.Translate(centerX, centerY)                           // Translate to locked position
+		// Translate to the center, rotate, and translate back.
+		op.GeoM.Translate(-float64(cellSize)/2, -float64(cellSize)/2) // Move to the center.
+		op.GeoM.Rotate(getRotationTheta(lp.piece.currentRotation))    // Apply rotation.
+		op.GeoM.Translate(centerX, centerY)                           // Translate to locked position.
 
-		// Draw the locked piece
+		// Draw the locked piece.
 		screen.DrawImage(lp.piece.image, op)
 	}
 }
@@ -315,20 +315,20 @@ Parameters:
 - screen: The ebiten.Image to draw the rotated piece onto.
 */
 func (g *Game) applyRotation(op *ebiten.DrawImageOptions, screen *ebiten.Image) {
-	// 1. Center the rotation point (relative to the piece)
+	// Center the rotation point (relative to the piece).
 	centerX := float64((g.pieceX * cellSize) + (g.activePiece.width*cellSize)/2)
 	centerY := float64((g.pieceY * cellSize) + (g.activePiece.height*cellSize)/2)
 
-	// Translate to the center of the piece
+	// Translate to the center of the piece.
 	op.GeoM.Translate(-float64(g.activePiece.width*cellSize)/2, -float64(g.activePiece.height*cellSize)/2)
 
-	// Rotate around the center
+	// Rotate around the center.
 	op.GeoM.Rotate(getRotationTheta(g.activePiece.currentRotation))
 
-	// Translate the piece back to its grid position
+	// Translate the piece back to its grid position.
 	op.GeoM.Translate(centerX, centerY)
 
-	// Draw the rotated piece
+	// Draw the rotated piece.
 	screen.DrawImage(g.activePiece.image, op)
 }
 
@@ -388,7 +388,7 @@ func (g *Game) canMove(dx, dy int) bool {
 	newX := g.pieceX + dx
 	newY := g.pieceY + dy
 
-	// Ensure the piece stays within bounds
+	// Ensure the piece stays within bounds.
 	if newX < 0 || newX+g.activePiece.width > gridSize {
 		return false
 	}
