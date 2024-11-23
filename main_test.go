@@ -15,7 +15,6 @@ func TestGetRotationTheta(t *testing.T) {
 		t.Errorf("Expected %v, got %v", expected, theta)
 	}
 }
-}
 
 // TestHighScore tests the high score functionality.
 func TestHighScore(t *testing.T) {
@@ -63,6 +62,7 @@ func TestGameOver(t *testing.T) {
 	if highScore != 300 {
 		t.Errorf("Expected high score to be 300 after game over, got %d", highScore)
 	}
+}
 
 // TestLoadImage tests the LoadImage function.
 func TestLoadImage(t *testing.T) {
