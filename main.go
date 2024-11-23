@@ -3,10 +3,10 @@ package main
 import (
 	"fmt"
 	"image/color"
-	"os"
 	"log"
 	"math"
 	"math/rand"
+	"os"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
@@ -57,7 +57,7 @@ func (g *Game) endGame() {
 loadHighScore loads the high score from a file.
 */
 func (g *Game) loadHighScore() int {
-	data, err := ioutil.ReadFile("highscore.txt")
+	data, err := os.ReadFile("highscore.txt")
 	if err != nil {
 		return 0
 	}
