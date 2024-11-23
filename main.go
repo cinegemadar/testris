@@ -52,13 +52,13 @@ func (g *Game) saveScore(score int) {
 	if err != nil {
 		log.Printf("Failed to open high score file: %v", err)
 		return
-		return 0
 	}
 	defer file.Close()
 
 	if _, err := file.WriteString(fmt.Sprintf("%d\n", score)); err != nil {
 		log.Printf("Failed to write score: %v", err)
 	}
+}
 
 /*
 loadTopScores loads and returns the top 5 scores from the highscore.txt file.
