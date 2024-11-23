@@ -5,12 +5,12 @@ import (
 	"image/color"
 	"io/ioutil"
 	"log"
-	"sort"
-	"strconv"
-	"strings"
 	"math"
 	"math/rand"
 	"os"
+	"sort"
+	"strconv"
+	"strings"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
@@ -55,7 +55,6 @@ func (g *Game) loadTopScores() []int {
 		}
 		log.Printf("Failed to read high scores: %v", err)
 		return []int{}
-		return
 	}
 	ebitenutil.DebugPrintAt(ebiten.NewImage(screenWidth, screenHeight), "GAME OVER", screenWidth/2-50, screenHeight/2+40)
 
