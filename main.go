@@ -396,9 +396,9 @@ func (g *Game) canMove(dx, dy int) bool {
 		return false
 	}
 
-	// Check for collisions with locked pieces
+	// Check for collisions with locked pieces.
 	for _, lp := range g.lockedPieces {
-		// Loop through each cell of the active piece's grid
+		// Loop through each cell of the active piece's grid.
 		for y := 0; y < g.activePiece.height; y++ {
 			for x := 0; x < g.activePiece.width; x++ {
 				if lp.x == newX+x && lp.y == newY+y {
