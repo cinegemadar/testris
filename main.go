@@ -1,8 +1,8 @@
 package main
 
 import (
-	"image/color"
 	"fmt"
+	"image/color"
 	"io/ioutil"
 	"log"
 	"math"
@@ -37,9 +37,8 @@ type Piece struct {
 	width, height   int           // Dimensions of the piece
 	piece_type      string        // Head, Torso, Leg
 	x, y            int           // Position of the piece
-	highScore int
-	gameOver  bool
-	gameOver            bool
+	highScore       int
+	gameOver        bool
 }
 
 /*
