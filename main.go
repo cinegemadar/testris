@@ -38,7 +38,6 @@ type Piece struct {
 	piece_type      string        // Head, Torso, Leg
 	x, y            int           // Position of the piece
 	highScore       int
-	gameOver        bool
 }
 
 /*
@@ -84,6 +83,7 @@ type Game struct {
 	pieceX, pieceY      int // Position of the active piece
 	score               int
 	frameCount          int
+	gameOver            bool
 	rotateKeyPressed    bool
 	moveLeftKeyPressed  bool
 	moveRightKeyPressed bool
