@@ -1,6 +1,7 @@
 package main
 
 import (
+	"os"
 	"testing"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -14,6 +15,53 @@ func TestGetRotationTheta(t *testing.T) {
 		t.Errorf("Expected %v, got %v", expected, theta)
 	}
 }
+
+// TestHighScore tests the high score functionality.
+func TestHighScore(t *testing.T) {
+	game := NewGame()
+
+	// Ensure the high score file is removed before testing
+	os.Remove("highscore.txt")
+
+	// Test saving a high score
+	game.saveHighScore(100)
+	highScore := game.loadHighScore()
+	if highScore != 100 {
+		t.Errorf("Expected high score to be 100, got %d", highScore)
+	}
+
+	// Test updating the high score
+	game.saveHighScore(200)
+	highScore = game.loadHighScore()
+	if highScore != 200 {
+		t.Errorf("Expected high score to be 200, got %d", highScore)
+	}
+
+	// Test not updating if the score is lower
+	game.saveHighScore(150)
+	highScore = game.loadHighScore()
+	if highScore != 200 {
+		t.Errorf("Expected high score to remain 200, got %d", highScore)
+	}
+}
+
+// TestGameOver tests the game over functionality.
+func TestGameOver(t *testing.T) {
+	game := NewGame()
+
+	// Simulate game over
+	game.endGame()
+	if !game.gameOver {
+		t.Error("Expected gameOver to be true, got false")
+	}
+
+	// Ensure high score is saved on game over
+	game.score = 300
+	game.endGame()
+	highScore := game.loadHighScore()
+	if highScore != 300 {
+		t.Errorf("Expected high score to be 300 after game over, got %d", highScore)
+	}
 
 // TestLoadImage tests the LoadImage function.
 func TestLoadImage(t *testing.T) {
