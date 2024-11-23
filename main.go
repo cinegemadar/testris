@@ -305,7 +305,11 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	vector.DrawFilledRect(screen, 0, 0, float32(screenWidth-sidebarWidth), float32(screenHeight), backgroundColor, false)
 
 	if g.gameOver {
-		ebitenutil.DebugPrintAt(screen, "GAME OVER", screenWidth/2-50, screenHeight/2)
+		if g.score >= g.loadHighScore() {
+			ebitenutil.DebugPrintAt(screen, "New High Score!", screenWidth/2-50, screenHeight/2)
+		} else {
+			ebitenutil.DebugPrintAt(screen, "GAME OVER", screenWidth/2-50, screenHeight/2)
+		}
 		ebitenutil.DebugPrintAt(screen, fmt.Sprintf("Score: %d", g.score), screenWidth/2-50, screenHeight/2+20)
 	}
 
