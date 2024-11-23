@@ -16,7 +16,7 @@ const (
 	screenWidth     = 800
 	screenHeight    = 600
 	sidebarWidth    = 140
-	speed           = 5
+	speed           = 10
 	gridSize        = 30
 	cellSize        = 16
 	spriteScale     = 16 // Scale factor for sprites
@@ -289,8 +289,8 @@ func (g *Game) drawLockedPieces(screen *ebiten.Image) {
 		op.GeoM.Scale(float64(spriteScale), float64(spriteScale))
 
 		// Translate to the top-left corner, rotate around the center, and translate back.
-		op.GeoM.Translate(-float64(lp.piece.width*cellSize)/2, -float64(lp.piece.height*cellSize)/2) // Move to the center of the piece.
-		op.GeoM.Rotate(getRotationTheta(lp.piece.currentRotation))                                   // Apply rotation.
+		op.GeoM.Translate(-float64(lp.piece.width*cellSize)/2, -float64(lp.piece.height*cellSize)/2)                 // Move to the center of the piece.
+		op.GeoM.Rotate(getRotationTheta(lp.piece.currentRotation))                                                   // Apply rotation.
 		op.GeoM.Translate(topLeftX+float64(lp.piece.width*cellSize)/2, topLeftY+float64(lp.piece.height*cellSize)/2) // Translate to locked position.
 
 		// Draw the locked piece.
@@ -381,22 +381,18 @@ func (g *Game) canMove(dx, dy int) bool {
 	newY := g.pieceY + dy
 
 	// Ensure the piece stays within bounds.
-	if newX < 0 || newX+g.activePiece.width > gridSize {
+	if newX+g.activePiece.width > gridSize-1 || newX < 1 {
 		return false
 	}
-	if newY < 0 || newY+g.activePiece.height > gridSize {
+	if newY+g.activePiece.height > gridSize-1 || newY < 1 {
 		return false
 	}
 
 	// Check for collisions with locked pieces.
 	for _, lp := range g.lockedPieces {
-		// Loop through each cell of the active piece's grid.
-		for y := 0; y < g.activePiece.height; y++ {
-			for x := 0; x < g.activePiece.width; x++ {
-				if lp.x == newX+x && lp.y == newY+y {
-					return false
-				}
-			}
+		if newX < lp.x+g.activePiece.width && newX+g.activePiece.width > lp.x &&
+			newY < lp.y+g.activePiece.height && newY+g.activePiece.height > lp.y {
+			return false
 		}
 	}
 
