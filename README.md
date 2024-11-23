@@ -45,7 +45,31 @@ go run main.go
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a pull request or open an issue.
+Contributions are welcome! Please follow these steps to contribute:
+
+1. Fork the repository.
+2. Create a new branch for your feature or bugfix.
+3. Make your changes and ensure they are well-tested.
+4. Commit your changes with a descriptive commit message.
+5. Push your changes to your fork.
+6. Submit a pull request to the main repository.
+
+Please feel free to open an issue if you encounter any bugs or have suggestions for improvements.
+
+## Testing
+
+To ensure the game runs correctly, you can run the following command to execute any tests:
+
+```bash
+go test ./...
+```
+
+Please make sure all tests pass before submitting a pull request.
+
+## Code Structure
+
+- `main.go`: Contains the main game logic and functions.
+- `assets/`: Directory containing image assets for the game pieces.
 
 ## License
 
