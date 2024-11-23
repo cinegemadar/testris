@@ -52,6 +52,7 @@ func (g *Game) saveScore(score int) {
 	if err != nil {
 		log.Printf("Failed to open high score file: %v", err)
 		return
+		return 0
 	}
 	defer file.Close()
 
@@ -121,8 +122,17 @@ func (g *Game) loadHighScore() int {
 		log.Printf("Failed to read high score: %v", err)
 	}
 
+	scoreStrings := strings.Split(string(data), "\n")
 	var highScore int
-	fmt.Sscanf(string(data), "%d", &highScore)
+	for _, scoreStr := range scoreStrings {
+		if scoreStr == "" {
+			continue
+		}
+		score, err := strconv.Atoi(scoreStr)
+		if err == nil && score > highScore {
+			highScore = score
+		}
+	}
 	return highScore
 }
 
