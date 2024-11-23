@@ -74,6 +74,7 @@ saveHighScore saves the high score to a file.
 func (g *Game) saveHighScore(score int) {
 	data := []byte(fmt.Sprintf("%d", score))
 	ioutil.WriteFile("highscore.txt", data, 0644)
+}
 
 type Game struct {
 	grid                [gridSize][gridSize]*ebiten.Image // Store image references for each grid cell
@@ -298,7 +299,7 @@ func (g *Game) drawSidebar(screen *ebiten.Image) {
 
 	// Draw score
 	ebitenutil.DebugPrintAt(screen, "SCORE", sidebarX+10, 120)
-	ebitenutil.DebugPrintAt(screen, string(rune(g.score)), sidebarX+10, 140)
+	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("%d", g.score), sidebarX+10, 140)
 }
 
 /*
