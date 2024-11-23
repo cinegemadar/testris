@@ -9,7 +9,10 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/vector"
-)
+	borderColor      = color.RGBA{R: 70, G: 255, B: 255, A: 255}
+	boundingBoxColor = color.RGBA{R: 255, G: 255, B: 0, A: 255}
+	sidebarColor     = color.RGBA{R: 70, G: 70, B: 70, A: 255}
+	backgroundColor  = color.RGBA{R: 0, G: 0, B: 0, A: 255}
 
 const (
 	borderThickness = 5
@@ -217,11 +220,11 @@ Parameters:
 - screen: The ebiten.Image to draw the game state onto.
 */
 func (g *Game) Draw(screen *ebiten.Image) {
-	screen.Fill(color.RGBA{R: 0, G: 0, B: 0, A: 255}) // Lighter background
+	screen.Fill(backgroundColor) // Lighter background
 
 	// Draw the sidebar
 	sidebarX := screenWidth - sidebarWidth
-	vector.DrawFilledRect(screen, float32(sidebarX), 0, sidebarWidth, screenHeight, color.RGBA{R: 70, G: 70, B: 70, A: 255}, false)
+	vector.DrawFilledRect(screen, float32(sidebarX), 0, sidebarWidth, screenHeight, sidebarColor, false)
 
 	// Draw  border around the game area
 	drawBorder(screen) // Right border
@@ -333,7 +336,6 @@ Parameters:
 - screen: The ebiten.Image to draw the bounding box onto.
 */
 func (g *Game) drawBoundingBox(screen *ebiten.Image) {
-	boundingBoxColor := color.RGBA{R: 255, G: 255, B: 0, A: 255}
 	vector.DrawFilledRect(screen, float32(g.pieceX*cellSize), float32(g.pieceY*cellSize), float32(g.activePiece.width*cellSize), 1, boundingBoxColor, false)
 	vector.DrawFilledRect(screen, float32(g.pieceX*cellSize), float32((g.pieceY+g.activePiece.height)*cellSize), float32(g.activePiece.width*cellSize), 1, boundingBoxColor, false)
 	vector.DrawFilledRect(screen, float32(g.pieceX*cellSize), float32(g.pieceY*cellSize), 1, float32(g.activePiece.height*cellSize), boundingBoxColor, false)
@@ -347,11 +349,10 @@ Parameters:
 - screen: The ebiten.Image to draw the border onto.
 */
 func drawBorder(screen *ebiten.Image) {
-	border_color := color.RGBA{R: 70, G: 255, B: 255, A: 255}
-	vector.DrawFilledRect(screen, 0, 0, float32(gridSize*cellSize), float32(borderThickness), border_color, false)
-	vector.DrawFilledRect(screen, 0, float32(gridSize*cellSize)-float32(borderThickness), float32(gridSize*cellSize), float32(borderThickness), border_color, false)
-	vector.DrawFilledRect(screen, 0, 0, float32(borderThickness), float32(gridSize*cellSize), border_color, false)
-	vector.DrawFilledRect(screen, float32(gridSize*cellSize)-float32(borderThickness), 0, float32(borderThickness), float32(gridSize*cellSize), border_color, false)
+	vector.DrawFilledRect(screen, 0, 0, float32(gridSize*cellSize), float32(borderThickness), borderColor, false)
+	vector.DrawFilledRect(screen, 0, float32(gridSize*cellSize)-float32(borderThickness), float32(gridSize*cellSize), float32(borderThickness), borderColor, false)
+	vector.DrawFilledRect(screen, 0, 0, float32(borderThickness), float32(gridSize*cellSize), borderColor, false)
+	vector.DrawFilledRect(screen, float32(gridSize*cellSize)-float32(borderThickness), 0, float32(borderThickness), float32(gridSize*cellSize), borderColor, false)
 }
 
 /*
