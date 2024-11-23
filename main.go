@@ -29,7 +29,6 @@ var (
 	backgroundColor  = color.RGBA{R: 0, G: 0, B: 0, A: 255}
 )
 
-
 type Piece struct {
 	image           *ebiten.Image // Single image for the piece
 	currentRotation int           // Current rotation in degrees (0, 90, 180, 270)
@@ -291,7 +290,7 @@ func (g *Game) drawLockedPieces(screen *ebiten.Image) {
 		op.GeoM.Translate(topLeftX+float64(lp.width*cellSize)/2, topLeftY+float64(lp.height*cellSize)/2) // Translate to locked position.
 
 		// Draw the locked piece.
-		screen.DrawImage(lp.piece.image, op)
+		screen.DrawImage(lp.image, op)
 	}
 }
 
