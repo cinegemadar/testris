@@ -257,13 +257,12 @@ Parameters:
 - screen: The ebiten.Image to draw the game state onto.
 */
 func (g *Game) Draw(screen *ebiten.Image) {
-	screen.Fill(backgroundColor) // Lighter background
+	// Fill only the game area with the background color
+	vector.DrawFilledRect(screen, 0, 0, float32(screenWidth-sidebarWidth), float32(screenHeight), backgroundColor, false)
 
 	if g.gameOver {
 		ebitenutil.DebugPrintAt(screen, "GAME OVER", screenWidth/2-50, screenHeight/2)
 		ebitenutil.DebugPrintAt(screen, fmt.Sprintf("Score: %d", g.score), screenWidth/2-50, screenHeight/2+20)
-		return
-		return
 	}
 
 	sidebarX := screenWidth - sidebarWidth
