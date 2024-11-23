@@ -2,6 +2,8 @@ package main
 
 import (
 	"testing"
+
+	"github.com/hajimehoshi/ebiten/v2"
 )
 
 // TestGetRotationTheta tests the getRotationTheta function.
