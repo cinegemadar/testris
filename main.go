@@ -39,6 +39,7 @@ type Piece struct {
 	x, y            int           // Position of the piece
 	highScore int
 	gameOver  bool
+	gameOver            bool
 }
 
 /*
