@@ -21,7 +21,7 @@ func TestHighScore(t *testing.T) {
 	game := NewGame()
 
 	// Ensure the high score file is removed before testing
-	os.Remove("highscore.txt")
+	_ = os.Remove("highscore.txt")
 
 	// Test saving a high score
 	game.saveHighScore(100)
@@ -127,6 +127,8 @@ func TestGameCanMove(t *testing.T) {
 // TestGameLockPiece tests the lockPiece method of Game.
 func TestGameLockPiece(t *testing.T) {
 	game := NewGame()
+	game.activePiece.x = game.pieceX
+	game.activePiece.y = game.pieceY
 	game.lockPiece()
 	if len(game.lockedPieces) != 1 {
 		t.Errorf("Expected 1 locked piece, got %d", len(game.lockedPieces))
@@ -136,6 +138,7 @@ func TestGameLockPiece(t *testing.T) {
 // TestGameSpawnNewPiece tests the spawnNewPiece method of Game.
 func TestGameSpawnNewPiece(t *testing.T) {
 	game := NewGame()
+	game.activePiece = game.nextPiece
 	game.spawnNewPiece()
 	if game.activePiece == nil {
 		t.Error("Expected new active piece, got nil")
