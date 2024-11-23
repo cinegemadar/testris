@@ -9,12 +9,13 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/vector"
+)
+
+const (
 	borderColor      = color.RGBA{R: 70, G: 255, B: 255, A: 255}
 	boundingBoxColor = color.RGBA{R: 255, G: 255, B: 0, A: 255}
 	sidebarColor     = color.RGBA{R: 70, G: 70, B: 70, A: 255}
 	backgroundColor  = color.RGBA{R: 0, G: 0, B: 0, A: 255}
-
-const (
 	borderThickness = 5
 	screenWidth     = 800
 	screenHeight    = 600
