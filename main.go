@@ -170,9 +170,15 @@ func (g *Game) Draw(screen *ebiten.Image) {
 
 	g.applyRotation(op, screen)
 
+	g.drawSidebar(screen)
+}
+
+func (g *Game) drawSidebar(screen *ebiten.Image) {
+	sidebarX := screenWidth - sidebarWidth
+
 	// Draw "Next Piece"
 	ebitenutil.DebugPrintAt(screen, "NEXT PIECE", sidebarX+10, 20)
-	op.GeoM.Reset()
+	op := &ebiten.DrawImageOptions{}
 	op.GeoM.Scale(spriteScale, spriteScale) // Apply scaling to the next piece
 	op.GeoM.Translate(float64(sidebarX+40), 50)
 	screen.DrawImage(g.nextPiece.image, op)
@@ -184,8 +190,6 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	ebitenutil.DebugPrintAt(screen, "SCORE", sidebarX+10, 120)
 	ebitenutil.DebugPrintAt(screen, string(rune(g.score)), sidebarX+10, 140)
 }
-
-func (g *Game) drawLockedPieces(screen *ebiten.Image) {
 	for _, lp := range g.lockedPieces {
 		op := &ebiten.DrawImageOptions{}
 
