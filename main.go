@@ -29,21 +29,17 @@ var (
 	backgroundColor  = color.RGBA{R: 0, G: 0, B: 0, A: 255}
 )
 
-type LockedPiece struct {
-	piece *Piece // The locked piece itself
-	x, y  int    // The position where it is locked
-}
-
 type Piece struct {
 	image           *ebiten.Image // Single image for the piece
 	currentRotation int           // Current rotation in degrees (0, 90, 180, 270)
 	width, height   int           // Dimensions of the piece
 	piece_type      string        // Head, Torso, Leg
+	x, y            int           // Position of the piece
 }
 
 type Game struct {
 	grid                [gridSize][gridSize]*ebiten.Image // Store image references for each grid cell
-	lockedPieces        []LockedPiece                     // Array to store locked pieces with positions
+	lockedPieces        []*Piece                          // Array to store locked pieces
 	activePiece         *Piece
 	nextPiece           *Piece
 	pieceX, pieceY      int // Position of the active piece
@@ -289,12 +285,12 @@ func (g *Game) drawLockedPieces(screen *ebiten.Image) {
 		op.GeoM.Scale(float64(spriteScale), float64(spriteScale))
 
 		// Translate to the top-left corner, rotate around the center, and translate back.
-		op.GeoM.Translate(-float64(lp.piece.width*cellSize)/2, -float64(lp.piece.height*cellSize)/2)                 // Move to the center of the piece.
-		op.GeoM.Rotate(getRotationTheta(lp.piece.currentRotation))                                                   // Apply rotation.
-		op.GeoM.Translate(topLeftX+float64(lp.piece.width*cellSize)/2, topLeftY+float64(lp.piece.height*cellSize)/2) // Translate to locked position.
+		op.GeoM.Translate(-float64(lp.width*cellSize)/2, -float64(lp.height*cellSize)/2)                 // Move to the center of the piece.
+		op.GeoM.Rotate(getRotationTheta(lp.currentRotation))                                             // Apply rotation.
+		op.GeoM.Translate(topLeftX+float64(lp.width*cellSize)/2, topLeftY+float64(lp.height*cellSize)/2) // Translate to locked position.
 
 		// Draw the locked piece.
-		screen.DrawImage(lp.piece.image, op)
+		screen.DrawImage(lp.image, op)
 	}
 }
 
@@ -389,9 +385,9 @@ func (g *Game) canMove(dx, dy int) bool {
 	}
 
 	// Check for collisions with locked pieces.
-	for _, lp := range g.lockedPieces {
-		if newX < lp.x+g.activePiece.width && newX+g.activePiece.width > lp.x &&
-			newY < lp.y+g.activePiece.height && newY+g.activePiece.height > lp.y {
+	for _, piece := range g.lockedPieces {
+		if newX < piece.x+g.activePiece.width && newX+g.activePiece.width > piece.x &&
+			newY < piece.y+g.activePiece.height && newY+g.activePiece.height > piece.y {
 			return false
 		}
 	}
@@ -405,20 +401,12 @@ adding it to the list of locked pieces.
 */
 func (g *Game) lockPiece() {
 	// Create a copy of the active piece with its current state
-	lockedPiece := &Piece{
-		image:           ebiten.NewImageFromImage(g.activePiece.image), // Deep copy of the image
-		currentRotation: g.activePiece.currentRotation,
-		width:           g.activePiece.width,  // This remains constant for squares
-		height:          g.activePiece.height, // This remains constant for squares
-		piece_type:      g.activePiece.piece_type,
-	}
+	lockedPiece := *g.activePiece
+	lockedPiece.x = g.pieceX
+	lockedPiece.y = g.pieceY
 
-	// Append the locked piece and its position to the array
-	g.lockedPieces = append(g.lockedPieces, LockedPiece{
-		piece: lockedPiece,
-		x:     g.pieceX, // Current X position in grid
-		y:     g.pieceY, // Current Y position in grid
-	})
+	// Append the locked piece to the array
+	g.lockedPieces = append(g.lockedPieces, &lockedPiece)
 }
 
 /*
