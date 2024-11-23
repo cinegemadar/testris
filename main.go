@@ -36,6 +36,7 @@ type Piece struct {
 	width, height   int           // Dimensions of the piece
 	piece_type      string        // Head, Torso, Leg
 	x, y            int           // Position of the piece
+}
 
 type Game struct {
 	grid                [gridSize][gridSize]*ebiten.Image // Store image references for each grid cell
