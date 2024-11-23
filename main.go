@@ -282,12 +282,6 @@ func (g *Game) drawLockedPieces(screen *ebiten.Image) {
 	for _, lp := range g.lockedPieces {
 		op := &ebiten.DrawImageOptions{}
 
-			// Scale the locked piece using spriteScale (consistent with active piece scaling).
-		// op.GeoM.Scale(
-		// 	float64(spriteScale)/float64(lp.piece.image.Bounds().Dx()),
-		// 	float64(spriteScale)/float64(lp.piece.image.Bounds().Dy()),
-		// )
-
 		// Calculate the center of the locked piece in screen coordinates.
 		centerX := float64(lp.x*cellSize) + float64(cellSize)/2
 		centerY := float64(lp.y*cellSize) + float64(cellSize)/2
