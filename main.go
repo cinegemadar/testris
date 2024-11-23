@@ -16,8 +16,8 @@ const (
 	screenWidth     = 800
 	screenHeight    = 600
 	sidebarWidth    = 140
-	speed           = 10
-	gridSize        = 26
+	speed           = 5
+	gridSize        = 30
 	cellSize        = 16
 	spriteScale     = 16 // Scale factor for sprites
 )
@@ -59,6 +59,7 @@ Returns:
 func getRotationTheta(deg int) float64 {
 	return float64(deg) * (math.Pi / 180)
 }
+
 /*
 Reset reinitializes the game state to start a new game.
 */
@@ -122,11 +123,24 @@ func (g *Game) Update() error {
 	g.frameCount++
 
 	// Handle user input for single actions per key press
+	// This is a **chain of responsibility**! not all actions below are triggerd in each iteration.
 	g.moveLeft()
 	g.moveRight()
 	g.rotate()
 
 	// Check for mouse click to restart the game
+	g.restart()
+
+	// Drop the piece every few frames
+	g.drop()
+
+	return nil
+}
+
+/*
+Restart the game if the restart button is clicked on the sidebar.
+*/
+func (g *Game) restart() {
 	if ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) {
 		x, y := ebiten.CursorPosition()
 		sidebarX := screenWidth - sidebarWidth
@@ -134,11 +148,6 @@ func (g *Game) Update() error {
 			g.Reset()
 		}
 	}
-
-	// Drop the piece every few frames
-	g.drop()
-
-	return nil
 }
 
 /*
@@ -267,15 +276,19 @@ func (g *Game) drawLockedPieces(screen *ebiten.Image) {
 		op := &ebiten.DrawImageOptions{}
 
 		// Scale the locked piece using spriteScale (consistent with active piece scaling)
-		op.GeoM.Scale(
-			float64(spriteScale)/float64(lp.piece.image.Bounds().Dx()),
-			float64(spriteScale)/float64(lp.piece.image.Bounds().Dy()),
-		)
+		// op.GeoM.Scale(
+		// 	float64(spriteScale)/float64(lp.piece.image.Bounds().Dx()),
+		// 	float64(spriteScale)/float64(lp.piece.image.Bounds().Dy()),
+		// )
 
 		// Calculate the center of the locked piece in screen coordinates
 		centerX := float64(lp.x*cellSize) + float64(cellSize)/2
 		centerY := float64(lp.y*cellSize) + float64(cellSize)/2
 
+		op.GeoM.Scale(
+			float64(spriteScale),
+			float64(spriteScale),
+		)
 		// Translate to the center, rotate, and translate back
 		op.GeoM.Translate(-float64(cellSize)/2, -float64(cellSize)/2) // Move to the center
 		op.GeoM.Rotate(getRotationTheta(lp.piece.currentRotation))    // Apply rotation
