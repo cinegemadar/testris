@@ -3,10 +3,14 @@ package main
 import (
 	"fmt"
 	"image/color"
+	"io/ioutil"
 	"log"
 	"math"
 	"math/rand"
 	"os"
+	"sort"
+	"strconv"
+	"strings"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
@@ -41,13 +45,63 @@ type Piece struct {
 }
 
 /*
+saveScore appends the current score to the highscore.txt file.
+*/
+func (g *Game) saveScore(score int) {
+	file, err := os.OpenFile("highscore.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		log.Printf("Failed to open high score file: %v", err)
+		return
+	}
+	defer file.Close()
+
+	if _, err := file.WriteString(fmt.Sprintf("%d\n", score)); err != nil {
+		log.Printf("Failed to write score: %v", err)
+	}
+}
+
+/*
+loadTopScores loads and returns the top 5 scores from the highscore.txt file.
+*/
+func (g *Game) loadTopScores() []int {
+	data, err := ioutil.ReadFile("highscore.txt")
+	if err != nil {
+		if os.IsNotExist(err) {
+			return []int{}
+		}
+		log.Printf("Failed to read high scores: %v", err)
+		return []int{}
+	}
+	// Parse scores from file
+	scoreStrings := strings.Split(string(data), "\n")
+	var scores []int
+	for _, scoreStr := range scoreStrings {
+		if scoreStr == "" {
+			continue
+		}
+		score, err := strconv.Atoi(scoreStr)
+		if err == nil {
+			scores = append(scores, score)
+		}
+	}
+
+	// Sort scores in descending order and return top 5
+	sort.Sort(sort.Reverse(sort.IntSlice(scores)))
+	if len(scores) > 5 {
+		scores = scores[:5]
+	}
+	return scores
+}
+
+/*
 endGame handles the end of the game, saving the score and checking for a new high score.
 */
 func (g *Game) endGame() {
 	g.gameOver = true
-	highScore := g.loadHighScore()
+	// Save the current score to the highscore file
+	g.saveScore(g.score)
 
-	if g.score > highScore {
+	if g.score >= g.loadHighScore() {
 		g.saveHighScore(g.score)
 		ebitenutil.DebugPrintAt(ebiten.NewImage(screenWidth, screenHeight), "New High Score!", screenWidth/2-50, screenHeight/2+40)
 		log.Println("New high score achieved!")
@@ -68,8 +122,17 @@ func (g *Game) loadHighScore() int {
 		log.Printf("Failed to read high score: %v", err)
 	}
 
+	scoreStrings := strings.Split(string(data), "\n")
 	var highScore int
-	fmt.Sscanf(string(data), "%d", &highScore)
+	for _, scoreStr := range scoreStrings {
+		if scoreStr == "" {
+			continue
+		}
+		score, err := strconv.Atoi(scoreStr)
+		if err == nil && score > highScore {
+			highScore = score
+		}
+	}
 	return highScore
 }
 
@@ -266,7 +329,11 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	vector.DrawFilledRect(screen, 0, 0, float32(screenWidth-sidebarWidth), float32(screenHeight), backgroundColor, false)
 
 	if g.gameOver {
-		ebitenutil.DebugPrintAt(screen, "GAME OVER", screenWidth/2-50, screenHeight/2)
+		if g.score >= g.loadHighScore() {
+			ebitenutil.DebugPrintAt(screen, "New High Score!", screenWidth/2-50, screenHeight/2)
+		} else {
+			ebitenutil.DebugPrintAt(screen, "GAME OVER", screenWidth/2-50, screenHeight/2)
+		}
 		ebitenutil.DebugPrintAt(screen, fmt.Sprintf("Score: %d", g.score), screenWidth/2-50, screenHeight/2+20)
 	}
 
@@ -302,7 +369,14 @@ func (g *Game) drawSidebar(screen *ebiten.Image) {
 	// Draw restart button
 	ebitenutil.DebugPrintAt(screen, "RESTART", sidebarX+10, 160)
 
-	// Draw score
+	// Draw top 5 scores
+	ebitenutil.DebugPrintAt(screen, "TOP 5 SCORES", sidebarX+10, 200)
+	topScores := g.loadTopScores()
+	for i, score := range topScores {
+		ebitenutil.DebugPrintAt(screen, fmt.Sprintf("%d: %d", i+1, score), sidebarX+10, 220+i*20)
+	}
+
+	// Draw current score
 	ebitenutil.DebugPrintAt(screen, "SCORE", sidebarX+10, 120)
 	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("%d", g.score), sidebarX+10, 140)
 }
