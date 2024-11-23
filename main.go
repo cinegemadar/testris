@@ -296,10 +296,10 @@ func (g *Game) drawLockedPieces(screen *ebiten.Image) {
 			float64(spriteScale),
 			float64(spriteScale),
 		)
-		// Translate to the center, rotate, and translate back.
-		op.GeoM.Translate(-float64(cellSize)/2, -float64(cellSize)/2) // Move to the center.
-		op.GeoM.Rotate(getRotationTheta(lp.piece.currentRotation))    // Apply rotation.
-		op.GeoM.Translate(centerX, centerY)                           // Translate to locked position.
+		// Translate to the center of the piece, rotate, and translate back.
+		op.GeoM.Translate(-float64(lp.piece.width*cellSize)/2, -float64(lp.piece.height*cellSize)/2) // Move to the center of the piece.
+		op.GeoM.Rotate(getRotationTheta(lp.piece.currentRotation))                                   // Apply rotation.
+		op.GeoM.Translate(centerX, centerY)                                                          // Translate to locked position.
 
 		// Draw the locked piece.
 		screen.DrawImage(lp.piece.image, op)
