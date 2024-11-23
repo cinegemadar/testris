@@ -50,6 +50,7 @@ func (g *Game) endGame() {
 	if g.score > highScore {
 		g.saveHighScore(g.score)
 		ebitenutil.DebugPrintAt(ebiten.NewImage(screenWidth, screenHeight), "New High Score!", screenWidth/2-50, screenHeight/2+40)
+		log.Println("New high score achieved!")
 	}
 }
 
@@ -59,7 +60,12 @@ loadHighScore loads the high score from a file.
 func (g *Game) loadHighScore() int {
 	data, err := os.ReadFile("highscore.txt")
 	if err != nil {
-		return 0
+		// If the file doesn't exist, create it with a default high score of 0
+		if os.IsNotExist(err) {
+			os.WriteFile("highscore.txt", []byte("0"), 0644)
+			return 0
+		}
+		log.Printf("Failed to read high score: %v", err)
 	}
 
 	var highScore int
