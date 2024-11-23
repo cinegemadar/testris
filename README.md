@@ -47,12 +47,10 @@ go run main.go
 
 Contributions are welcome! Please follow these steps to contribute:
 
-1. Fork the repository.
-2. Create a new branch for your feature or bugfix.
-3. Make your changes and ensure they are well-tested.
-4. Commit your changes with a descriptive commit message.
-5. Push your changes to your fork.
-6. Submit a pull request to the main repository.
+1. Create a new branch for your feature or bugfix.
+2. Make your changes and ensure they are well-tested.
+3. Commit your changes with a descriptive commit message.
+4. Submit a pull request to the main repository.
 
 Please feel free to open an issue if you encounter any bugs or have suggestions for improvements.
 
