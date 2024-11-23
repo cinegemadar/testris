@@ -15,6 +15,7 @@ func TestGetRotationTheta(t *testing.T) {
 		t.Errorf("Expected %v, got %v", expected, theta)
 	}
 }
+}
 
 // TestHighScore tests the high score functionality.
 func TestHighScore(t *testing.T) {
