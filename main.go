@@ -16,7 +16,7 @@ const (
 	screenWidth     = 800
 	screenHeight    = 600
 	sidebarWidth    = 140
-	speed           = 5
+	speed           = 10
 	gridSize        = 30
 	cellSize        = 16
 	spriteScale     = 16 // Scale factor for sprites
@@ -289,8 +289,8 @@ func (g *Game) drawLockedPieces(screen *ebiten.Image) {
 		op.GeoM.Scale(float64(spriteScale), float64(spriteScale))
 
 		// Translate to the top-left corner, rotate around the center, and translate back.
-		op.GeoM.Translate(-float64(lp.piece.width*cellSize)/2, -float64(lp.piece.height*cellSize)/2) // Move to the center of the piece.
-		op.GeoM.Rotate(getRotationTheta(lp.piece.currentRotation))                                   // Apply rotation.
+		op.GeoM.Translate(-float64(lp.piece.width*cellSize)/2, -float64(lp.piece.height*cellSize)/2)                 // Move to the center of the piece.
+		op.GeoM.Rotate(getRotationTheta(lp.piece.currentRotation))                                                   // Apply rotation.
 		op.GeoM.Translate(topLeftX+float64(lp.piece.width*cellSize)/2, topLeftY+float64(lp.piece.height*cellSize)/2) // Translate to locked position.
 
 		// Draw the locked piece.
@@ -381,10 +381,10 @@ func (g *Game) canMove(dx, dy int) bool {
 	newY := g.pieceY + dy
 
 	// Ensure the piece stays within bounds.
-	if newX < borderThickness/cellSize || newX+g.activePiece.width > gridSize-borderThickness/cellSize {
+	if newX+g.activePiece.width > gridSize-1 || newX < 1 {
 		return false
 	}
-	if newY < borderThickness/cellSize || newY+g.activePiece.height > gridSize-borderThickness/cellSize {
+	if newY+g.activePiece.height > gridSize-1 || newY < 1 {
 		return false
 	}
 
