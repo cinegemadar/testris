@@ -71,8 +71,6 @@ func (g *Game) loadTopScores() []int {
 		log.Printf("Failed to read high scores: %v", err)
 		return []int{}
 	}
-	ebitenutil.DebugPrintAt(ebiten.NewImage(screenWidth, screenHeight), "GAME OVER", screenWidth/2-50, screenHeight/2+40)
-
 	// Parse scores from file
 	scoreStrings := strings.Split(string(data), "\n")
 	var scores []int
@@ -103,6 +101,7 @@ func (g *Game) endGame() {
 	g.saveScore(g.score)
 
 	if g.score >= g.loadHighScore() {
+		g.saveHighScore(g.score)
 		ebitenutil.DebugPrintAt(ebiten.NewImage(screenWidth, screenHeight), "New High Score!", screenWidth/2-50, screenHeight/2+40)
 		log.Println("New high score achieved!")
 	}
