@@ -16,7 +16,6 @@ func TestGetRotationTheta(t *testing.T) {
 	}
 }
 }
-}
 
 // TestHighScore tests the high score functionality.
 func TestHighScore(t *testing.T) {
