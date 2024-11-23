@@ -19,7 +19,7 @@ TESTRis is a simple Tetris-like game implemented in Go using the Ebiten game lib
 1. Clone the repository:
 
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/cinegemadar/testris.git
    cd <repository-directory>
    ```
 
