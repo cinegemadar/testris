@@ -110,10 +110,7 @@ func (g *Game) drop() {
 func (g *Game) rotate() {
 	if ebiten.IsKeyPressed(ebiten.KeySpace) {
 		if !g.rotateKeyPressed {
-			g.activePiece.currentRotation += g.activePiece.currentRotation + 90
-			if g.activePiece.currentRotation > 720 {
-				g.activePiece.currentRotation = 0
-			}
+			g.activePiece.currentRotation = (g.activePiece.currentRotation + 90) % 360
 		}
 		g.rotateKeyPressed = true
 	} else {
@@ -181,17 +178,22 @@ func (g *Game) Draw(screen *ebiten.Image) {
 
 func (g *Game) drawLockedPieces(screen *ebiten.Image) {
 	for _, lp := range g.lockedPieces {
-
 		op := &ebiten.DrawImageOptions{}
-		op.GeoM.Scale(spriteScale, spriteScale) // Scale the sprite
-		// Calculate the top-left corner of the piece in screen coordinates
-		topLeftX := float64(lp.x * cellSize)
-		topLeftY := float64(lp.y * cellSize)
 
-		// Move to the center of the piece, rotate, and move back
-		op.GeoM.Translate(topLeftX+float64(lp.piece.width*cellSize)/2, topLeftY+float64(lp.piece.height*cellSize)/2)
-		op.GeoM.Rotate(getRotationTheta(lp.piece.currentRotation))
-		op.GeoM.Translate(-float64(lp.piece.width*cellSize)/2, -float64(lp.piece.height*cellSize)/2)
+		// Scale the locked piece using spriteScale (consistent with active piece scaling)
+		op.GeoM.Scale(
+			float64(spriteScale)/float64(lp.piece.image.Bounds().Dx()),
+			float64(spriteScale)/float64(lp.piece.image.Bounds().Dy()),
+		)
+
+		// Calculate the center of the locked piece in screen coordinates
+		centerX := float64(lp.x*cellSize) + float64(cellSize)/2
+		centerY := float64(lp.y*cellSize) + float64(cellSize)/2
+
+		// Translate to the center, rotate, and translate back
+		op.GeoM.Translate(-float64(cellSize)/2, -float64(cellSize)/2) // Move to the center
+		op.GeoM.Rotate(getRotationTheta(lp.piece.currentRotation))    // Apply rotation
+		op.GeoM.Translate(centerX, centerY)                           // Translate to locked position
 
 		// Draw the locked piece
 		screen.DrawImage(lp.piece.image, op)
@@ -237,19 +239,28 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
 }
 
 func (g *Game) canMove(dx, dy int) bool {
-	// Calculate the new position of the bounding box after the move
+	// Calculate the new position of the active piece
 	newX := g.pieceX + dx
 	newY := g.pieceY + dy
 
-	// Calculate the border thickness in cells
-	borderCells := int(math.Ceil(float64(borderThickness) / float64(cellSize)))
-
-	// Ensure the bounding box does not go outside the playable grid
-	if newX < borderCells || newX+g.activePiece.width > gridSize-borderCells {
+	// Ensure the piece stays within bounds
+	if newX < 0 || newX+g.activePiece.width > gridSize+borderThickness {
 		return false
 	}
-	if newY < borderCells || newY+g.activePiece.height > gridSize-borderCells {
+	if newY < 0 || newY+g.activePiece.height > gridSize {
 		return false
+	}
+
+	// Check for collisions with locked pieces
+	for _, lp := range g.lockedPieces {
+		// Loop through each cell of the active piece's grid
+		for y := 0; y < g.activePiece.height; y++ {
+			for x := 0; x < g.activePiece.width; x++ {
+				if lp.x == newX+x && lp.y == newY+y {
+					return false
+				}
+			}
+		}
 	}
 
 	return true
