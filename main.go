@@ -12,10 +12,6 @@ import (
 )
 
 const (
-	borderColor      = color.RGBA{R: 70, G: 255, B: 255, A: 255}
-	boundingBoxColor = color.RGBA{R: 255, G: 255, B: 0, A: 255}
-	sidebarColor     = color.RGBA{R: 70, G: 70, B: 70, A: 255}
-	backgroundColor  = color.RGBA{R: 0, G: 0, B: 0, A: 255}
 	borderThickness = 5
 	screenWidth     = 800
 	screenHeight    = 600
@@ -24,6 +20,13 @@ const (
 	gridSize        = 30
 	cellSize        = 16
 	spriteScale     = 16 // Scale factor for sprites
+)
+
+var (
+	borderColor      = color.RGBA{R: 70, G: 255, B: 255, A: 255}
+	boundingBoxColor = color.RGBA{R: 255, G: 255, B: 0, A: 255}
+	sidebarColor     = color.RGBA{R: 70, G: 70, B: 70, A: 255}
+	backgroundColor  = color.RGBA{R: 0, G: 0, B: 0, A: 255}
 )
 
 type LockedPiece struct {
