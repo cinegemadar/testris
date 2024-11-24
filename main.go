@@ -193,7 +193,7 @@ Returns:
 func LoadImage(path string) (*ebiten.Image, error) {
 	img, _, err := ebitenutil.NewImageFromFile(path)
 	if err != nil {
-		return nil, fmt.Errorf("failed to load image: %s", path)
+		return nil, fmt.Errorf("failed to load image from path %s: %w", path, err)
 	}
 	return img, nil
 }
@@ -489,16 +489,13 @@ Returns:
 - True if the piece can move to the new position, otherwise false.
 */
 func (g *Game) canMove(dx, dy int) bool {
-	// Calculate the new position of the active piece
 	newX := g.pieceX + dx
 	newY := g.pieceY + dy
 
-	// Ensure the piece stays within bounds.
 	if !isWithinBounds(newX, newY, g.activePiece.width, g.activePiece.height, 1, gridSize-1, 1, gridSize-1) {
 		return false
 	}
 
-	// Check for collisions with locked pieces.
 	for _, piece := range g.lockedPieces {
 		if isColliding(newX, newY, g.activePiece.width, g.activePiece.height, piece) {
 			return false
