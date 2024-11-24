@@ -7,7 +7,6 @@ import (
 	"math"
 	"math/rand"
 	"os"
-	"errors"
 	"sort"
 	"strconv"
 	"strings"
@@ -146,7 +145,6 @@ func (g *Game) loadHighScore() int {
 		}
 	}
 	return highScore
-}
 }
 
 type Game struct {
@@ -533,7 +531,6 @@ func (g *Game) spawnNewPiece() {
 		g.endGame()
 		return
 	}
-
 
 	g.activePiece = g.nextPiece
 	g.nextPiece = allPieces[rand.Intn(len(allPieces))]
