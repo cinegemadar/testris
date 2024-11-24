@@ -60,6 +60,7 @@ func (g *Game) handleKeyRelease(key ebiten.Key, pressed *bool, action func()) {
 	} else {
 		*pressed = true
 	}
+}
 
 /*
 dropPiece moves the active piece as far down as possible.
