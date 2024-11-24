@@ -41,6 +41,7 @@ type Piece struct {
 	pieceType       string        // Head, Torso, Leg
 	x, y            int           // Position of the piece
 	highScore       int
+	dropKeyPressed     bool
 }
 
 /*
@@ -269,7 +270,7 @@ func (g *Game) Update() error {
 		g.movePieceInDirection(1, ebiten.KeyArrowRight, &g.moveRightKeyPressed)
 		g.rotate()
 		g.drop()
-		g.handleKeyRelease(ebiten.KeyEnter, new(bool), g.dropPiece)
+		g.handleKeyRelease(ebiten.KeyEnter, &g.dropKeyPressed, g.dropPiece)
 	}
 
 	return nil
