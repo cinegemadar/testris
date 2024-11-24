@@ -44,6 +44,24 @@ type Piece struct {
 }
 
 /*
+handleKeyRelease centralizes the handling of key releases to trigger actions.
+
+Parameters:
+- key: The ebiten key to check.
+- pressed: A pointer to a boolean indicating if the key was previously pressed.
+- action: The action to perform if the key is released.
+*/
+func (g *Game) handleKeyRelease(key ebiten.Key, pressed *bool, action func()) {
+	if !ebiten.IsKeyPressed(key) {
+		if *pressed {
+			action()
+		}
+		*pressed = false
+	} else {
+		*pressed = true
+	}
+
+/*
 dropPiece moves the active piece as far down as possible.
 */
 func (g *Game) dropPiece() {
@@ -250,7 +268,7 @@ func (g *Game) Update() error {
 		g.movePieceInDirection(1, ebiten.KeyArrowRight, &g.moveRightKeyPressed)
 		g.rotate()
 		g.drop()
-		g.handleKeyPress(ebiten.KeyEnter, new(bool), g.dropPiece)
+		g.handleKeyRelease(ebiten.KeyEnter, new(bool), g.dropPiece)
 	}
 
 	return nil
