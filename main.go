@@ -396,7 +396,6 @@ Parameters:
 - op: The ebiten.DrawImageOptions to apply transformations.
 - screen: The ebiten.Image to draw the rotated piece onto.
 */
-func (g *Game) applyRotation(op *ebiten.DrawImageOptions, screen *ebiten.Image) {
 /*
 applyRotationToPiece applies the current rotation to a piece and prepares it
 for drawing on the screen.
