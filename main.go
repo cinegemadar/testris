@@ -17,13 +17,12 @@ import (
 )
 
 const (
-	borderThickness = 12
-	screenWidth     = 800
-	screenHeight    = 600
-	sidebarWidth    = 140
-	speed           = 10
-	gridSize        = 30
-	scale           = 16 // Unified scale factor for cells and sprites
+	screenWidth  = 800
+	screenHeight = 600
+	sidebarWidth = 140
+	speed        = 10
+	gridSize     = 30
+	scale        = 8 // Unified scale factor for cells and sprites
 )
 
 var (
@@ -333,7 +332,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	g.drawBoundingBox(screen)
 
 	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Scale(spriteScale, spriteScale)
+	op.GeoM.Scale(scale, scale)
 	g.applyRotation(op, screen)
 	g.drawSidebar(screen)
 }
@@ -384,7 +383,7 @@ func (g *Game) drawLockedPieces(screen *ebiten.Image) {
 		topLeftX := float64(lp.x * scale)
 		topLeftY := float64(lp.y * scale)
 
-		op.GeoM.Scale(float64(scale), float64(scale))
+		op.GeoM.Scale(scale, scale)
 
 		// Translate to the top-left corner, rotate around the center, and translate back.
 		op.GeoM.Translate(-float64(lp.width*scale)/2, -float64(lp.height*scale)/2)                 // Move to the center of the piece.
@@ -443,10 +442,10 @@ Parameters:
 - screen: The ebiten.Image to draw the border onto.
 */
 func drawBorder(screen *ebiten.Image) {
-	vector.DrawFilledRect(screen, 0, 0, float32(gridSize*scale), float32(borderThickness), borderColor, false)
-	vector.DrawFilledRect(screen, 0, float32(gridSize*scale)-float32(borderThickness), float32(gridSize*scale), float32(borderThickness), borderColor, false)
-	vector.DrawFilledRect(screen, 0, 0, float32(borderThickness), float32(gridSize*scale), borderColor, false)
-	vector.DrawFilledRect(screen, float32(gridSize*scale)-float32(borderThickness), 0, float32(borderThickness), float32(gridSize*scale), borderColor, false)
+	vector.DrawFilledRect(screen, 0, 0, float32(gridSize*scale), float32(scale), borderColor, false)
+	vector.DrawFilledRect(screen, 0, float32(gridSize*scale)-float32(scale), float32(gridSize*scale), float32(scale), borderColor, false)
+	vector.DrawFilledRect(screen, 0, 0, float32(scale), float32(gridSize*scale), borderColor, false)
+	vector.DrawFilledRect(screen, float32(gridSize*scale)-float32(scale), 0, float32(scale), float32(gridSize*scale), borderColor, false)
 }
 
 /*
