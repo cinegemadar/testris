@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"image/color"
-	"io/ioutil"
 	"log"
 	"math"
 	"math/rand"
@@ -64,7 +63,7 @@ func (g *Game) saveScore(score int) {
 loadTopScores loads and returns the top 5 scores from the highscore.txt file.
 */
 func (g *Game) loadTopScores() []int {
-	data, err := ioutil.ReadFile("highscore.txt")
+	data, err := os.ReadFile("highscore.txt")
 	if err != nil {
 		if os.IsNotExist(err) {
 			return []int{}
