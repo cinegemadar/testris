@@ -301,10 +301,6 @@ func (g *Game) rotate() {
 }
 
 /*
-moveRight moves the active piece one cell to the right if possible
-when the right arrow key is pressed.
-*/
-/*
 movePieceInDirection moves the active piece one cell in the specified direction
 when the corresponding arrow key is pressed.
 
@@ -402,14 +398,6 @@ func (g *Game) drawLockedPieces(screen *ebiten.Image) {
 	}
 }
 
-/*
-applyRotation applies the current rotation to the active piece and draws it
-on the screen.
-
-Parameters:
-- op: The ebiten.DrawImageOptions to apply transformations.
-- screen: The ebiten.Image to draw the rotated piece onto.
-*/
 /*
 applyRotationToPiece applies the current rotation to a piece and prepares it
 for drawing on the screen.
