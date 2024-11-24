@@ -101,7 +101,6 @@ func (g *Game) endGame() {
 	g.saveScore(g.score)
 
 	if g.score >= g.loadHighScore() {
-		g.saveHighScore(g.score)
 		ebitenutil.DebugPrintAt(ebiten.NewImage(screenWidth, screenHeight), "New High Score!", screenWidth/2-50, screenHeight/2+40)
 		log.Println("New high score achieved!")
 	}
@@ -133,14 +132,6 @@ func (g *Game) loadHighScore() int {
 		}
 	}
 	return highScore
-}
-
-/*
-saveHighScore saves the high score to a file.
-*/
-func (g *Game) saveHighScore(score int) {
-	data := []byte(fmt.Sprintf("%d", score))
-	os.WriteFile("highscore.txt", data, 0644)
 }
 
 type Game struct {
