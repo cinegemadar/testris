@@ -320,7 +320,6 @@ func (g *Game) movePieceInDirection(direction int, key ebiten.Key, pressed *bool
 		}
 	})
 }
-}
 
 /*
 Draw renders the current game state to the screen, including the active piece,
