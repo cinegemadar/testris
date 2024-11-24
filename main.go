@@ -22,7 +22,7 @@ const (
 	sidebarWidth = 140
 	speed        = 10
 	gridSize     = 30
-	scale        = 8 // Unified scale factor for cells and sprites
+	scale        = 16 // Unified scale factor for cells and sprites
 )
 
 var (
@@ -380,8 +380,6 @@ func (g *Game) drawLockedPieces(screen *ebiten.Image) {
 		op := &ebiten.DrawImageOptions{}
 
 		// Calculate the top-left corner of the locked piece in screen coordinates.
-		// topLeftX := float64(lp.x * scale)
-		// topLeftY := float64(lp.y * scale)
 
 		g.applyRotationToPiece(op, lp, lp.x, lp.y)
 		screen.DrawImage(lp.image, op)
