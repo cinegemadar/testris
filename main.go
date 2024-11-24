@@ -41,22 +41,6 @@ type Piece struct {
 	highScore       int
 
 /*
-saveScore appends the current score to the highscore.txt file.
-*/
-func (g *Game) saveScore(score int) {
-	file, err := os.OpenFile("highscore.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		log.Printf("Failed to open high score file: %v", err)
-		return
-	}
-	defer file.Close()
-
-	if _, err := file.WriteString(fmt.Sprintf("%d\n", score)); err != nil {
-		log.Printf("Failed to write score: %v", err)
-	}
-}
-
-/*
 loadTopScores loads and returns the top 5 scores from the highscore.txt file.
 */
 func (g *Game) loadTopScores() []int {
@@ -87,6 +71,20 @@ func (g *Game) loadTopScores() []int {
 		scores = scores[:5]
 	}
 	return scores
+/*
+saveScore appends the current score to the highscore.txt file.
+*/
+func (g *Game) saveScore(score int) {
+	file, err := os.OpenFile("highscore.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		log.Printf("Failed to open high score file: %v", err)
+		return
+	}
+	defer file.Close()
+
+	if _, err := file.WriteString(fmt.Sprintf("%d\n", score)); err != nil {
+		log.Printf("Failed to write score: %v", err)
+	}
 }
 
 /*
