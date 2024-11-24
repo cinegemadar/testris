@@ -24,21 +24,21 @@ func TestHighScore(t *testing.T) {
 	_ = os.Remove("highscore.txt")
 
 	// Test saving a high score
-	game.saveHighScore(100)
+	game.saveScore(100)
 	highScore := game.loadHighScore()
 	if highScore != 100 {
 		t.Errorf("Expected high score to be 100, got %d", highScore)
 	}
 
 	// Test updating the high score
-	game.saveHighScore(200)
+	game.saveScore(200)
 	highScore = game.loadHighScore()
 	if highScore != 200 {
 		t.Errorf("Expected high score to be 200, got %d", highScore)
 	}
 
 	// Test not updating if the score is lower
-	game.saveHighScore(250)
+	game.saveScore(250)
 	highScore = game.loadHighScore()
 	if highScore < 250 {
 		t.Errorf("Expected high score to remain 200, got %d", highScore)
