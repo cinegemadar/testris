@@ -16,15 +16,15 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/vector"
 )
 
+const highScoreFileName = "highscore.txt"
+
 const (
-	borderThickness = 5
-	screenWidth     = 800
-	screenHeight    = 600
-	sidebarWidth    = 140
-	speed           = 10
-	gridSize        = 30
-	cellSize        = 16
-	spriteScale     = 16 // Scale factor for sprites
+	screenWidth  = 800
+	screenHeight = 600
+	sidebarWidth = 140
+	speed        = 10
+	gridSize     = 30
+	scale        = 16 // Unified scale factor for cells and sprites
 )
 
 var (
@@ -38,32 +38,71 @@ type Piece struct {
 	image           *ebiten.Image // Single image for the piece
 	currentRotation int           // Current rotation in degrees (0, 90, 180, 270)
 	width, height   int           // Dimensions of the piece
-	piece_type      string        // Head, Torso, Leg
+	pieceType       string        // Head, Torso, Leg
 	x, y            int           // Position of the piece
 	highScore       int
+	dropKeyPressed     bool
 }
 
 /*
-saveScore appends the current score to the highscore.txt file.
-*/
-func (g *Game) saveScore(score int) {
-	file, err := os.OpenFile("highscore.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		log.Printf("Failed to open high score file: %v", err)
-		return
-	}
-	defer file.Close()
+handleKeyRelease centralizes the handling of key releases to trigger actions.
 
-	if _, err := file.WriteString(fmt.Sprintf("%d\n", score)); err != nil {
-		log.Printf("Failed to write score: %v", err)
+Parameters:
+- key: The ebiten key to check.
+- pressed: A pointer to a boolean indicating if the key was previously pressed.
+- action: The action to perform if the key is released.
+*/
+func (g *Game) handleKeyRelease(key ebiten.Key, pressed *bool, action func()) {
+	if !ebiten.IsKeyPressed(key) {
+		if *pressed {
+			action()
+		}
+		*pressed = false
+	} else {
+		*pressed = true
 	}
+}
+
+/*
+dropPiece moves the active piece as far down as possible.
+*/
+func (g *Game) dropPiece() {
+	for g.canMove(0, 1) {
+		g.pieceY++
+	}
+	g.lockPiece()
+	g.spawnNewPiece()
+}
+
+func isWithinBounds(x, y, width, height, minX, maxX, minY, maxY int) bool {
+	return x+width <= maxX && x >= minX && y+height <= maxY && y >= minY
+}
+
+func isColliding(newX, newY, width, height int, piece *Piece) bool {
+	return newX < piece.x+width && newX+width > piece.x && newY < piece.y+height && newY+height > piece.y
+}
+
+func (g *Game) movePiece(direction int, pressed *bool, key ebiten.Key) {
+	g.handleKeyPress(key, pressed, func() {
+		if g.canMove(direction, 0) {
+			g.pieceX += direction
+		}
+	})
+}
+
+func mustLoadImage(path string) *ebiten.Image {
+	img, err := LoadImage(path)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return img
 }
 
 /*
 loadTopScores loads and returns the top 5 scores from the highscore.txt file.
 */
-func (g *Game) loadTopScores() []int {
-	data, err := os.ReadFile("highscore.txt")
+func readScoresFromFile() []int {
+	data, err := os.ReadFile(highScoreFileName)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return []int{}
@@ -71,7 +110,7 @@ func (g *Game) loadTopScores() []int {
 		log.Printf("Failed to read high scores: %v", err)
 		return []int{}
 	}
-	// Parse scores from file
+
 	scoreStrings := strings.Split(string(data), "\n")
 	var scores []int
 	for _, scoreStr := range scoreStrings {
@@ -83,13 +122,32 @@ func (g *Game) loadTopScores() []int {
 			scores = append(scores, score)
 		}
 	}
+	return scores
+}
 
-	// Sort scores in descending order and return top 5
+func (g *Game) loadTopScores() []int {
+	scores := readScoresFromFile()
 	sort.Sort(sort.Reverse(sort.IntSlice(scores)))
 	if len(scores) > 5 {
 		scores = scores[:5]
 	}
 	return scores
+}
+
+/*
+saveScore appends the current score to the highscore.txt file.
+*/
+func (g *Game) saveScore(score int) {
+	file, err := os.OpenFile(highScoreFileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		log.Printf("Failed to open high score file: %v", err)
+		return
+	}
+	defer file.Close()
+
+	if _, err := file.WriteString(fmt.Sprintf("%d\n", score)); err != nil {
+		log.Printf("Failed to write score: %v", err)
+	}
 }
 
 /*
@@ -110,24 +168,10 @@ func (g *Game) endGame() {
 loadHighScore loads the high score from a file.
 */
 func (g *Game) loadHighScore() int {
-	data, err := os.ReadFile("highscore.txt")
-	if err != nil {
-		// If the file doesn't exist, create it with a default high score of 0
-		if os.IsNotExist(err) {
-			os.WriteFile("highscore.txt", []byte("0"), 0644)
-			return 0
-		}
-		log.Printf("Failed to read high score: %v", err)
-	}
-
-	scoreStrings := strings.Split(string(data), "\n")
+	scores := readScoresFromFile()
 	var highScore int
-	for _, scoreStr := range scoreStrings {
-		if scoreStr == "" {
-			continue
-		}
-		score, err := strconv.Atoi(scoreStr)
-		if err == nil && score > highScore {
+	for _, score := range scores {
+		if score > highScore {
 			highScore = score
 		}
 	}
@@ -146,6 +190,7 @@ type Game struct {
 	rotateKeyPressed    bool
 	moveLeftKeyPressed  bool
 	moveRightKeyPressed bool
+	dropKeyPressed      bool
 }
 
 /*
@@ -177,23 +222,21 @@ Parameters:
 Returns:
 - A pointer to the loaded ebiten.Image.
 */
-func LoadImage(path string) *ebiten.Image {
+func LoadImage(path string) (*ebiten.Image, error) {
 	img, _, err := ebitenutil.NewImageFromFile(path)
 	if err != nil {
-		log.Fatalf("Failed to load image: %s", path)
+		return nil, fmt.Errorf("failed to load image from path %s: %w", path, err)
 	}
-	return img
+	return img, nil
 }
 
-/*
-loadPieces initializes and returns a slice of Piece pointers,
-each representing a different type of game piece.
-*/
-func loadPieces() []*Piece {
-	return []*Piece{
-		{image: LoadImage("assets/head.png"), currentRotation: 0, width: 3, height: 3, piece_type: "Head"},
-		{image: LoadImage("assets/torso.png"), currentRotation: 0, width: 3, height: 3, piece_type: "Torso"},
-		{image: LoadImage("assets/leg.png"), currentRotation: 0, width: 3, height: 3, piece_type: "Leg"},
+var allPieces []*Piece
+
+func init() {
+	allPieces = []*Piece{
+		{image: mustLoadImage("assets/head.png"), currentRotation: 0, width: 3, height: 3, pieceType: "Head"},
+		{image: mustLoadImage("assets/torso.png"), currentRotation: 0, width: 3, height: 3, pieceType: "Torso"},
+		{image: mustLoadImage("assets/leg.png"), currentRotation: 0, width: 3, height: 3, pieceType: "Leg"},
 	}
 }
 
@@ -202,8 +245,6 @@ NewGame creates and returns a new Game instance with initialized pieces
 and game state.
 */
 func NewGame() *Game {
-	allPieces := loadPieces()
-
 	return &Game{
 		grid:        [gridSize][gridSize]*ebiten.Image{},
 		activePiece: allPieces[rand.Intn(len(allPieces))],
@@ -226,10 +267,11 @@ func (g *Game) Update() error {
 	g.restart() // Always check for restart
 
 	if !g.gameOver {
-		g.moveLeft()
-		g.moveRight()
+		g.movePieceInDirection(-1, ebiten.KeyArrowLeft, &g.moveLeftKeyPressed)
+		g.movePieceInDirection(1, ebiten.KeyArrowRight, &g.moveRightKeyPressed)
 		g.rotate()
 		g.drop()
+		g.handleKeyRelease(ebiten.KeyEnter, &g.dropKeyPressed, g.dropPiece)
 	}
 
 	return nil
@@ -242,7 +284,7 @@ func (g *Game) restart() {
 	if ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) {
 		x, y := ebiten.CursorPosition()
 		sidebarX := screenWidth - sidebarWidth
-		if x >= sidebarX+10 && x <= sidebarX+110 && y >= 160 && y <= 180 {
+		if isWithinBounds(x, y, 0, 0, sidebarX+10, sidebarX+110, 160, 180) {
 			g.Reset()
 		}
 	}
@@ -264,47 +306,48 @@ func (g *Game) drop() {
 }
 
 /*
+handleKeyPress centralizes the handling of key presses to reduce redundancy.
+
+Parameters:
+- key: The ebiten key to check.
+- pressed: A pointer to a boolean indicating if the key was previously pressed.
+- action: The action to perform if the key is pressed.
+*/
+func (g *Game) handleKeyPress(key ebiten.Key, pressed *bool, action func()) {
+	if ebiten.IsKeyPressed(key) {
+		if !*pressed {
+			action()
+		}
+		*pressed = true
+	} else {
+		*pressed = false
+	}
+}
+
+/*
 rotate handles the rotation of the active piece when the space key is pressed.
 */
 func (g *Game) rotate() {
-	if ebiten.IsKeyPressed(ebiten.KeySpace) {
-		if !g.rotateKeyPressed {
-			g.activePiece.currentRotation = (g.activePiece.currentRotation + 90) % 360
-		}
-		g.rotateKeyPressed = true
-	} else {
-		g.rotateKeyPressed = false
-	}
+	g.handleKeyPress(ebiten.KeySpace, &g.rotateKeyPressed, func() {
+		g.activePiece.currentRotation = (g.activePiece.currentRotation + 90) % 360
+	})
 }
 
 /*
-moveRight moves the active piece one cell to the right if possible
-when the right arrow key is pressed.
-*/
-func (g *Game) moveRight() {
-	if ebiten.IsKeyPressed(ebiten.KeyArrowRight) {
-		if !g.moveRightKeyPressed && g.canMove(1, 0) {
-			g.pieceX++
-		}
-		g.moveRightKeyPressed = true
-	} else {
-		g.moveRightKeyPressed = false
-	}
-}
+movePieceInDirection moves the active piece one cell in the specified direction
+when the corresponding arrow key is pressed.
 
-/*
-moveLeft moves the active piece one cell to the left if possible
-when the left arrow key is pressed.
+Parameters:
+- direction: The direction to move the piece (-1 for left, 1 for right).
+- key: The ebiten key to check for the direction.
+- pressed: A pointer to a boolean indicating if the key was previously pressed.
 */
-func (g *Game) moveLeft() {
-	if ebiten.IsKeyPressed(ebiten.KeyArrowLeft) {
-		if !g.moveLeftKeyPressed && g.canMove(-1, 0) {
-			g.pieceX--
+func (g *Game) movePieceInDirection(direction int, key ebiten.Key, pressed *bool) {
+	g.handleKeyPress(key, pressed, func() {
+		if g.canMove(direction, 0) {
+			g.pieceX += direction
 		}
-		g.moveLeftKeyPressed = true
-	} else {
-		g.moveLeftKeyPressed = false
-	}
+	})
 }
 
 /*
@@ -334,8 +377,8 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	g.drawBoundingBox(screen)
 
 	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Scale(spriteScale, spriteScale)
-	g.applyRotation(op, screen)
+	g.applyRotationToPiece(op, g.activePiece, g.pieceX, g.pieceY)
+	screen.DrawImage(g.activePiece.image, op)
 	g.drawSidebar(screen)
 }
 
@@ -352,7 +395,7 @@ func (g *Game) drawSidebar(screen *ebiten.Image) {
 	// Draw "Next Piece"
 	ebitenutil.DebugPrintAt(screen, "NEXT PIECE", sidebarX+10, 20)
 	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Scale(spriteScale, spriteScale) // Apply scaling to the next piece
+	op.GeoM.Scale(scale, scale) // Apply scaling to the next piece
 	op.GeoM.Translate(float64(sidebarX+40), 50)
 	screen.DrawImage(g.nextPiece.image, op)
 
@@ -382,45 +425,37 @@ func (g *Game) drawLockedPieces(screen *ebiten.Image) {
 		op := &ebiten.DrawImageOptions{}
 
 		// Calculate the top-left corner of the locked piece in screen coordinates.
-		topLeftX := float64(lp.x * cellSize)
-		topLeftY := float64(lp.y * cellSize)
 
-		op.GeoM.Scale(float64(spriteScale), float64(spriteScale))
-
-		// Translate to the top-left corner, rotate around the center, and translate back.
-		op.GeoM.Translate(-float64(lp.width*cellSize)/2, -float64(lp.height*cellSize)/2)                 // Move to the center of the piece.
-		op.GeoM.Rotate(getRotationTheta(lp.currentRotation))                                             // Apply rotation.
-		op.GeoM.Translate(topLeftX+float64(lp.width*cellSize)/2, topLeftY+float64(lp.height*cellSize)/2) // Translate to locked position.
-
-		// Draw the locked piece.
+		g.applyRotationToPiece(op, lp, lp.x, lp.y)
 		screen.DrawImage(lp.image, op)
 	}
 }
 
 /*
-applyRotation applies the current rotation to the active piece and draws it
-on the screen.
+applyRotationToPiece applies the current rotation to a piece and prepares it
+for drawing on the screen.
 
 Parameters:
 - op: The ebiten.DrawImageOptions to apply transformations.
-- screen: The ebiten.Image to draw the rotated piece onto.
+- piece: The Piece to apply the rotation to.
+- posX: The x position of the piece on the grid.
+- posY: The y position of the piece on the grid.
 */
-func (g *Game) applyRotation(op *ebiten.DrawImageOptions, screen *ebiten.Image) {
+func (g *Game) applyRotationToPiece(op *ebiten.DrawImageOptions, piece *Piece, posX, posY int) {
+	op.GeoM.Scale(scale, scale)
+
 	// Center the rotation point (relative to the piece).
-	centerX := float64((g.pieceX * cellSize) + (g.activePiece.width*cellSize)/2)
-	centerY := float64((g.pieceY * cellSize) + (g.activePiece.height*cellSize)/2)
+	centerX := float64((posX * scale) + (piece.width*scale)/2)
+	centerY := float64((posY * scale) + (piece.height*scale)/2)
 
 	// Translate to the center of the piece.
-	op.GeoM.Translate(-float64(g.activePiece.width*cellSize)/2, -float64(g.activePiece.height*cellSize)/2)
+	op.GeoM.Translate(-float64(piece.width*scale)/2, -float64(piece.height*scale)/2)
 
 	// Rotate around the center.
-	op.GeoM.Rotate(getRotationTheta(g.activePiece.currentRotation))
+	op.GeoM.Rotate(getRotationTheta(piece.currentRotation))
 
 	// Translate the piece back to its grid position.
 	op.GeoM.Translate(centerX, centerY)
-
-	// Draw the rotated piece.
-	screen.DrawImage(g.activePiece.image, op)
 }
 
 /*
@@ -431,10 +466,10 @@ Parameters:
 - screen: The ebiten.Image to draw the bounding box onto.
 */
 func (g *Game) drawBoundingBox(screen *ebiten.Image) {
-	vector.DrawFilledRect(screen, float32(g.pieceX*cellSize), float32(g.pieceY*cellSize), float32(g.activePiece.width*cellSize), 1, boundingBoxColor, false)
-	vector.DrawFilledRect(screen, float32(g.pieceX*cellSize), float32((g.pieceY+g.activePiece.height)*cellSize), float32(g.activePiece.width*cellSize), 1, boundingBoxColor, false)
-	vector.DrawFilledRect(screen, float32(g.pieceX*cellSize), float32(g.pieceY*cellSize), 1, float32(g.activePiece.height*cellSize), boundingBoxColor, false)
-	vector.DrawFilledRect(screen, float32((g.pieceX+g.activePiece.width)*cellSize), float32(g.pieceY*cellSize), 1, float32(g.activePiece.height*cellSize), boundingBoxColor, false)
+	vector.DrawFilledRect(screen, float32(g.pieceX*scale), float32(g.pieceY*scale), float32(g.activePiece.width*scale), 1, boundingBoxColor, false)
+	vector.DrawFilledRect(screen, float32(g.pieceX*scale), float32((g.pieceY+g.activePiece.height)*scale), float32(g.activePiece.width*scale), 1, boundingBoxColor, false)
+	vector.DrawFilledRect(screen, float32(g.pieceX*scale), float32(g.pieceY*scale), 1, float32(g.activePiece.height*scale), boundingBoxColor, false)
+	vector.DrawFilledRect(screen, float32((g.pieceX+g.activePiece.width)*scale), float32(g.pieceY*scale), 1, float32(g.activePiece.height*scale), boundingBoxColor, false)
 }
 
 /*
@@ -444,10 +479,10 @@ Parameters:
 - screen: The ebiten.Image to draw the border onto.
 */
 func drawBorder(screen *ebiten.Image) {
-	vector.DrawFilledRect(screen, 0, 0, float32(gridSize*cellSize), float32(borderThickness), borderColor, false)
-	vector.DrawFilledRect(screen, 0, float32(gridSize*cellSize)-float32(borderThickness), float32(gridSize*cellSize), float32(borderThickness), borderColor, false)
-	vector.DrawFilledRect(screen, 0, 0, float32(borderThickness), float32(gridSize*cellSize), borderColor, false)
-	vector.DrawFilledRect(screen, float32(gridSize*cellSize)-float32(borderThickness), 0, float32(borderThickness), float32(gridSize*cellSize), borderColor, false)
+	vector.DrawFilledRect(screen, 0, 0, float32(gridSize*scale), float32(scale), borderColor, false)
+	vector.DrawFilledRect(screen, 0, float32(gridSize*scale)-float32(scale), float32(gridSize*scale), float32(scale), borderColor, false)
+	vector.DrawFilledRect(screen, 0, 0, float32(scale), float32(gridSize*scale), borderColor, false)
+	vector.DrawFilledRect(screen, float32(gridSize*scale)-float32(scale), 0, float32(scale), float32(gridSize*scale), borderColor, false)
 }
 
 /*
@@ -475,22 +510,15 @@ Returns:
 - True if the piece can move to the new position, otherwise false.
 */
 func (g *Game) canMove(dx, dy int) bool {
-	// Calculate the new position of the active piece
 	newX := g.pieceX + dx
 	newY := g.pieceY + dy
 
-	// Ensure the piece stays within bounds.
-	if newX+g.activePiece.width > gridSize-1 || newX < 1 {
-		return false
-	}
-	if newY+g.activePiece.height > gridSize-1 || newY < 1 {
+	if !isWithinBounds(newX, newY, g.activePiece.width, g.activePiece.height, 1, gridSize-1, 1, gridSize-1) {
 		return false
 	}
 
-	// Check for collisions with locked pieces.
 	for _, piece := range g.lockedPieces {
-		if newX < piece.x+g.activePiece.width && newX+g.activePiece.width > piece.x &&
-			newY < piece.y+g.activePiece.height && newY+g.activePiece.height > piece.y {
+		if isColliding(newX, newY, g.activePiece.width, g.activePiece.height, piece) {
 			return false
 		}
 	}
@@ -519,10 +547,8 @@ func (g *Game) spawnNewPiece() {
 		return
 	}
 
-	pieces := loadPieces()
-
 	g.activePiece = g.nextPiece
-	g.nextPiece = pieces[rand.Intn(len(pieces))]
+	g.nextPiece = allPieces[rand.Intn(len(allPieces))]
 	g.pieceX = gridSize / 2
 	g.pieceY = 0
 }
