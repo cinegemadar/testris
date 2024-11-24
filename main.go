@@ -147,27 +147,6 @@ func (g *Game) loadHighScore() int {
 	}
 	return highScore
 }
-	if err != nil {
-		// If the file doesn't exist, create it with a default high score of 0
-		if os.IsNotExist(err) {
-			os.WriteFile("highscore.txt", []byte("0"), 0644)
-			return 0
-		}
-		log.Printf("Failed to read high score: %v", err)
-	}
-
-	scoreStrings := strings.Split(string(data), "\n")
-	var highScore int
-	for _, scoreStr := range scoreStrings {
-		if scoreStr == "" {
-			continue
-		}
-		score, err := strconv.Atoi(scoreStr)
-		if err == nil && score > highScore {
-			highScore = score
-		}
-	}
-	return highScore
 }
 
 type Game struct {
