@@ -190,6 +190,7 @@ type Game struct {
 	rotateKeyPressed    bool
 	moveLeftKeyPressed  bool
 	moveRightKeyPressed bool
+	dropKeyPressed      bool
 }
 
 /*
