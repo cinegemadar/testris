@@ -43,8 +43,8 @@ type Piece struct {
 	highScore       int
 }
 
-func isWithinBounds(x, y, minX, maxX, minY, maxY int) bool {
-	return x+g.activePiece.width <= maxX && x >= minX && y+g.activePiece.height <= maxY && y >= minY
+func isWithinBounds(x, y, width, height, minX, maxX, minY, maxY int) bool {
+	return x+width <= maxX && x >= minX && y+height <= maxY && y >= minY
 }
 
 func isColliding(newX, newY, width, height int, piece *Piece) bool {
@@ -251,7 +251,7 @@ func (g *Game) restart() {
 	if ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) {
 		x, y := ebiten.CursorPosition()
 		sidebarX := screenWidth - sidebarWidth
-		if isWithinBounds(x, y, sidebarX+10, sidebarX+110, 160, 180) {
+		if isWithinBounds(x, y, 0, 0, sidebarX+10, sidebarX+110, 160, 180) {
 			g.Reset()
 		}
 	}
