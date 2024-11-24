@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	borderThickness = 5
+	borderThickness = 12
 	screenWidth     = 800
 	screenHeight    = 600
 	sidebarWidth    = 140
