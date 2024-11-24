@@ -39,7 +39,6 @@ type Piece struct {
 	piece_type      string        // Head, Torso, Leg
 	x, y            int           // Position of the piece
 	highScore       int
-}
 
 /*
 saveScore appends the current score to the highscore.txt file.
