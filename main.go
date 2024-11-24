@@ -43,6 +43,17 @@ type Piece struct {
 	highScore       int
 }
 
+/*
+dropPiece moves the active piece as far down as possible.
+*/
+func (g *Game) dropPiece() {
+	for g.canMove(0, 1) {
+		g.pieceY++
+	}
+	g.lockPiece()
+	g.spawnNewPiece()
+}
+
 func isWithinBounds(x, y, width, height, minX, maxX, minY, maxY int) bool {
 	return x+width <= maxX && x >= minX && y+height <= maxY && y >= minY
 }
@@ -239,6 +250,7 @@ func (g *Game) Update() error {
 		g.movePieceInDirection(1, ebiten.KeyArrowRight, &g.moveRightKeyPressed)
 		g.rotate()
 		g.drop()
+		g.handleKeyPress(ebiten.KeyEnter, new(bool), g.dropPiece)
 	}
 
 	return nil
