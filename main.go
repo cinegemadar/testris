@@ -7,6 +7,7 @@ import (
 	"math"
 	"math/rand"
 	"os"
+	"errors"
 	"sort"
 	"strconv"
 	"strings"
@@ -15,6 +16,8 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/vector"
 )
+
+const highScoreFileName = "highscore.txt"
 
 const (
 	screenWidth  = 800
@@ -36,16 +39,40 @@ type Piece struct {
 	image           *ebiten.Image // Single image for the piece
 	currentRotation int           // Current rotation in degrees (0, 90, 180, 270)
 	width, height   int           // Dimensions of the piece
-	piece_type      string        // Head, Torso, Leg
+	pieceType       string        // Head, Torso, Leg
 	x, y            int           // Position of the piece
 	highScore       int
+}
+
+func isWithinBounds(x, y, minX, maxX, minY, maxY int) bool {
+	return x+g.activePiece.width <= maxX && x >= minX && y+g.activePiece.height <= maxY && y >= minY
+}
+
+func isColliding(newX, newY, width, height int, piece *Piece) bool {
+	return newX < piece.x+width && newX+width > piece.x && newY < piece.y+height && newY+height > piece.y
+}
+
+func (g *Game) movePiece(direction int, pressed *bool, key ebiten.Key) {
+	g.handleKeyPress(key, pressed, func() {
+		if g.canMove(direction, 0) {
+			g.pieceX += direction
+		}
+	})
+}
+
+func mustLoadImage(path string) *ebiten.Image {
+	img, err := LoadImage(path)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return img
 }
 
 /*
 loadTopScores loads and returns the top 5 scores from the highscore.txt file.
 */
-func (g *Game) loadTopScores() []int {
-	data, err := os.ReadFile("highscore.txt")
+func readScoresFromFile() []int {
+	data, err := os.ReadFile(highScoreFileName)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return []int{}
@@ -53,7 +80,7 @@ func (g *Game) loadTopScores() []int {
 		log.Printf("Failed to read high scores: %v", err)
 		return []int{}
 	}
-	// Parse scores from file
+
 	scoreStrings := strings.Split(string(data), "\n")
 	var scores []int
 	for _, scoreStr := range scoreStrings {
@@ -65,8 +92,11 @@ func (g *Game) loadTopScores() []int {
 			scores = append(scores, score)
 		}
 	}
+	return scores
+}
 
-	// Sort scores in descending order and return top 5
+func (g *Game) loadTopScores() []int {
+	scores := readScoresFromFile()
 	sort.Sort(sort.Reverse(sort.IntSlice(scores)))
 	if len(scores) > 5 {
 		scores = scores[:5]
@@ -78,7 +108,7 @@ func (g *Game) loadTopScores() []int {
 saveScore appends the current score to the highscore.txt file.
 */
 func (g *Game) saveScore(score int) {
-	file, err := os.OpenFile("highscore.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	file, err := os.OpenFile(highScoreFileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		log.Printf("Failed to open high score file: %v", err)
 		return
@@ -108,7 +138,15 @@ func (g *Game) endGame() {
 loadHighScore loads the high score from a file.
 */
 func (g *Game) loadHighScore() int {
-	data, err := os.ReadFile("highscore.txt")
+	scores := readScoresFromFile()
+	var highScore int
+	for _, score := range scores {
+		if score > highScore {
+			highScore = score
+		}
+	}
+	return highScore
+}
 	if err != nil {
 		// If the file doesn't exist, create it with a default high score of 0
 		if os.IsNotExist(err) {
@@ -175,21 +213,21 @@ Parameters:
 Returns:
 - A pointer to the loaded ebiten.Image.
 */
-func LoadImage(path string) *ebiten.Image {
+func LoadImage(path string) (*ebiten.Image, error) {
 	img, _, err := ebitenutil.NewImageFromFile(path)
 	if err != nil {
-		log.Fatalf("Failed to load image: %s", path)
+		return nil, fmt.Errorf("failed to load image: %s", path)
 	}
-	return img
+	return img, nil
 }
 
 var allPieces []*Piece
 
 func init() {
 	allPieces = []*Piece{
-		{image: LoadImage("assets/head.png"), currentRotation: 0, width: 3, height: 3, piece_type: "Head"},
-		{image: LoadImage("assets/torso.png"), currentRotation: 0, width: 3, height: 3, piece_type: "Torso"},
-		{image: LoadImage("assets/leg.png"), currentRotation: 0, width: 3, height: 3, piece_type: "Leg"},
+		{image: mustLoadImage("assets/head.png"), currentRotation: 0, width: 3, height: 3, pieceType: "Head"},
+		{image: mustLoadImage("assets/torso.png"), currentRotation: 0, width: 3, height: 3, pieceType: "Torso"},
+		{image: mustLoadImage("assets/leg.png"), currentRotation: 0, width: 3, height: 3, pieceType: "Leg"},
 	}
 }
 
@@ -220,8 +258,8 @@ func (g *Game) Update() error {
 	g.restart() // Always check for restart
 
 	if !g.gameOver {
-		g.moveLeft()
-		g.moveRight()
+		g.movePiece(-1, &g.moveLeftKeyPressed, ebiten.KeyArrowLeft)
+		g.movePiece(1, &g.moveRightKeyPressed, ebiten.KeyArrowRight)
 		g.rotate()
 		g.drop()
 	}
@@ -236,7 +274,7 @@ func (g *Game) restart() {
 	if ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) {
 		x, y := ebiten.CursorPosition()
 		sidebarX := screenWidth - sidebarWidth
-		if x >= sidebarX+10 && x <= sidebarX+110 && y >= 160 && y <= 180 {
+		if isWithinBounds(x, y, sidebarX+10, sidebarX+110, 160, 180) {
 			g.Reset()
 		}
 	}
@@ -482,17 +520,13 @@ func (g *Game) canMove(dx, dy int) bool {
 	newY := g.pieceY + dy
 
 	// Ensure the piece stays within bounds.
-	if newX+g.activePiece.width > gridSize-1 || newX < 1 {
-		return false
-	}
-	if newY+g.activePiece.height > gridSize-1 || newY < 1 {
+	if !isWithinBounds(newX, newY, 1, gridSize-1, 1, gridSize-1) {
 		return false
 	}
 
 	// Check for collisions with locked pieces.
 	for _, piece := range g.lockedPieces {
-		if newX < piece.x+g.activePiece.width && newX+g.activePiece.width > piece.x &&
-			newY < piece.y+g.activePiece.height && newY+g.activePiece.height > piece.y {
+		if isColliding(newX, newY, g.activePiece.width, g.activePiece.height, piece) {
 			return false
 		}
 	}
@@ -521,10 +555,9 @@ func (g *Game) spawnNewPiece() {
 		return
 	}
 
-	pieces := loadPieces()
 
 	g.activePiece = g.nextPiece
-	g.nextPiece = pieces[rand.Intn(len(pieces))]
+	g.nextPiece = allPieces[rand.Intn(len(allPieces))]
 	g.pieceX = gridSize / 2
 	g.pieceY = 0
 }
