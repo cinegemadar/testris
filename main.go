@@ -183,12 +183,10 @@ func LoadImage(path string) *ebiten.Image {
 	return img
 }
 
-/*
-loadPieces initializes and returns a slice of Piece pointers,
-each representing a different type of game piece.
-*/
-func loadPieces() []*Piece {
-	return []*Piece{
+var allPieces []*Piece
+
+func init() {
+	allPieces = []*Piece{
 		{image: LoadImage("assets/head.png"), currentRotation: 0, width: 3, height: 3, piece_type: "Head"},
 		{image: LoadImage("assets/torso.png"), currentRotation: 0, width: 3, height: 3, piece_type: "Torso"},
 		{image: LoadImage("assets/leg.png"), currentRotation: 0, width: 3, height: 3, piece_type: "Leg"},
@@ -200,8 +198,6 @@ NewGame creates and returns a new Game instance with initialized pieces
 and game state.
 */
 func NewGame() *Game {
-	allPieces := loadPieces()
-
 	return &Game{
 		grid:        [gridSize][gridSize]*ebiten.Image{},
 		activePiece: allPieces[rand.Intn(len(allPieces))],
@@ -262,17 +258,31 @@ func (g *Game) drop() {
 }
 
 /*
+handleKeyPress centralizes the handling of key presses to reduce redundancy.
+
+Parameters:
+- key: The ebiten key to check.
+- pressed: A pointer to a boolean indicating if the key was previously pressed.
+- action: The action to perform if the key is pressed.
+*/
+func (g *Game) handleKeyPress(key ebiten.Key, pressed *bool, action func()) {
+	if ebiten.IsKeyPressed(key) {
+		if !*pressed {
+			action()
+		}
+		*pressed = true
+	} else {
+		*pressed = false
+	}
+}
+
+/*
 rotate handles the rotation of the active piece when the space key is pressed.
 */
 func (g *Game) rotate() {
-	if ebiten.IsKeyPressed(ebiten.KeySpace) {
-		if !g.rotateKeyPressed {
-			g.activePiece.currentRotation = (g.activePiece.currentRotation + 90) % 360
-		}
-		g.rotateKeyPressed = true
-	} else {
-		g.rotateKeyPressed = false
-	}
+	g.handleKeyPress(ebiten.KeySpace, &g.rotateKeyPressed, func() {
+		g.activePiece.currentRotation = (g.activePiece.currentRotation + 90) % 360
+	})
 }
 
 /*
@@ -280,14 +290,11 @@ moveRight moves the active piece one cell to the right if possible
 when the right arrow key is pressed.
 */
 func (g *Game) moveRight() {
-	if ebiten.IsKeyPressed(ebiten.KeyArrowRight) {
-		if !g.moveRightKeyPressed && g.canMove(1, 0) {
+	g.handleKeyPress(ebiten.KeyArrowRight, &g.moveRightKeyPressed, func() {
+		if g.canMove(1, 0) {
 			g.pieceX++
 		}
-		g.moveRightKeyPressed = true
-	} else {
-		g.moveRightKeyPressed = false
-	}
+	})
 }
 
 /*
@@ -295,14 +302,11 @@ moveLeft moves the active piece one cell to the left if possible
 when the left arrow key is pressed.
 */
 func (g *Game) moveLeft() {
-	if ebiten.IsKeyPressed(ebiten.KeyArrowLeft) {
-		if !g.moveLeftKeyPressed && g.canMove(-1, 0) {
+	g.handleKeyPress(ebiten.KeyArrowLeft, &g.moveLeftKeyPressed, func() {
+		if g.canMove(-1, 0) {
 			g.pieceX--
 		}
-		g.moveLeftKeyPressed = true
-	} else {
-		g.moveLeftKeyPressed = false
-	}
+	})
 }
 
 /*
