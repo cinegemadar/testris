@@ -23,8 +23,7 @@ const (
 	sidebarWidth    = 140
 	speed           = 10
 	gridSize        = 30
-	cellSize        = 16
-	spriteScale     = 16 // Scale factor for sprites
+	scale           = 16 // Unified scale factor for cells and sprites
 )
 
 var (
@@ -352,7 +351,7 @@ func (g *Game) drawSidebar(screen *ebiten.Image) {
 	// Draw "Next Piece"
 	ebitenutil.DebugPrintAt(screen, "NEXT PIECE", sidebarX+10, 20)
 	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Scale(spriteScale, spriteScale) // Apply scaling to the next piece
+	op.GeoM.Scale(scale, scale) // Apply scaling to the next piece
 	op.GeoM.Translate(float64(sidebarX+40), 50)
 	screen.DrawImage(g.nextPiece.image, op)
 
@@ -382,15 +381,15 @@ func (g *Game) drawLockedPieces(screen *ebiten.Image) {
 		op := &ebiten.DrawImageOptions{}
 
 		// Calculate the top-left corner of the locked piece in screen coordinates.
-		topLeftX := float64(lp.x * cellSize)
-		topLeftY := float64(lp.y * cellSize)
+		topLeftX := float64(lp.x * scale)
+		topLeftY := float64(lp.y * scale)
 
-		op.GeoM.Scale(float64(spriteScale), float64(spriteScale))
+		op.GeoM.Scale(float64(scale), float64(scale))
 
 		// Translate to the top-left corner, rotate around the center, and translate back.
-		op.GeoM.Translate(-float64(lp.width*cellSize)/2, -float64(lp.height*cellSize)/2)                 // Move to the center of the piece.
-		op.GeoM.Rotate(getRotationTheta(lp.currentRotation))                                             // Apply rotation.
-		op.GeoM.Translate(topLeftX+float64(lp.width*cellSize)/2, topLeftY+float64(lp.height*cellSize)/2) // Translate to locked position.
+		op.GeoM.Translate(-float64(lp.width*scale)/2, -float64(lp.height*scale)/2)                 // Move to the center of the piece.
+		op.GeoM.Rotate(getRotationTheta(lp.currentRotation))                                       // Apply rotation.
+		op.GeoM.Translate(topLeftX+float64(lp.width*scale)/2, topLeftY+float64(lp.height*scale)/2) // Translate to locked position.
 
 		// Draw the locked piece.
 		screen.DrawImage(lp.image, op)
@@ -407,11 +406,11 @@ Parameters:
 */
 func (g *Game) applyRotation(op *ebiten.DrawImageOptions, screen *ebiten.Image) {
 	// Center the rotation point (relative to the piece).
-	centerX := float64((g.pieceX * cellSize) + (g.activePiece.width*cellSize)/2)
-	centerY := float64((g.pieceY * cellSize) + (g.activePiece.height*cellSize)/2)
+	centerX := float64((g.pieceX * scale) + (g.activePiece.width*scale)/2)
+	centerY := float64((g.pieceY * scale) + (g.activePiece.height*scale)/2)
 
 	// Translate to the center of the piece.
-	op.GeoM.Translate(-float64(g.activePiece.width*cellSize)/2, -float64(g.activePiece.height*cellSize)/2)
+	op.GeoM.Translate(-float64(g.activePiece.width*scale)/2, -float64(g.activePiece.height*scale)/2)
 
 	// Rotate around the center.
 	op.GeoM.Rotate(getRotationTheta(g.activePiece.currentRotation))
@@ -431,10 +430,10 @@ Parameters:
 - screen: The ebiten.Image to draw the bounding box onto.
 */
 func (g *Game) drawBoundingBox(screen *ebiten.Image) {
-	vector.DrawFilledRect(screen, float32(g.pieceX*cellSize), float32(g.pieceY*cellSize), float32(g.activePiece.width*cellSize), 1, boundingBoxColor, false)
-	vector.DrawFilledRect(screen, float32(g.pieceX*cellSize), float32((g.pieceY+g.activePiece.height)*cellSize), float32(g.activePiece.width*cellSize), 1, boundingBoxColor, false)
-	vector.DrawFilledRect(screen, float32(g.pieceX*cellSize), float32(g.pieceY*cellSize), 1, float32(g.activePiece.height*cellSize), boundingBoxColor, false)
-	vector.DrawFilledRect(screen, float32((g.pieceX+g.activePiece.width)*cellSize), float32(g.pieceY*cellSize), 1, float32(g.activePiece.height*cellSize), boundingBoxColor, false)
+	vector.DrawFilledRect(screen, float32(g.pieceX*scale), float32(g.pieceY*scale), float32(g.activePiece.width*scale), 1, boundingBoxColor, false)
+	vector.DrawFilledRect(screen, float32(g.pieceX*scale), float32((g.pieceY+g.activePiece.height)*scale), float32(g.activePiece.width*scale), 1, boundingBoxColor, false)
+	vector.DrawFilledRect(screen, float32(g.pieceX*scale), float32(g.pieceY*scale), 1, float32(g.activePiece.height*scale), boundingBoxColor, false)
+	vector.DrawFilledRect(screen, float32((g.pieceX+g.activePiece.width)*scale), float32(g.pieceY*scale), 1, float32(g.activePiece.height*scale), boundingBoxColor, false)
 }
 
 /*
@@ -444,10 +443,10 @@ Parameters:
 - screen: The ebiten.Image to draw the border onto.
 */
 func drawBorder(screen *ebiten.Image) {
-	vector.DrawFilledRect(screen, 0, 0, float32(gridSize*cellSize), float32(borderThickness), borderColor, false)
-	vector.DrawFilledRect(screen, 0, float32(gridSize*cellSize)-float32(borderThickness), float32(gridSize*cellSize), float32(borderThickness), borderColor, false)
-	vector.DrawFilledRect(screen, 0, 0, float32(borderThickness), float32(gridSize*cellSize), borderColor, false)
-	vector.DrawFilledRect(screen, float32(gridSize*cellSize)-float32(borderThickness), 0, float32(borderThickness), float32(gridSize*cellSize), borderColor, false)
+	vector.DrawFilledRect(screen, 0, 0, float32(gridSize*scale), float32(borderThickness), borderColor, false)
+	vector.DrawFilledRect(screen, 0, float32(gridSize*scale)-float32(borderThickness), float32(gridSize*scale), float32(borderThickness), borderColor, false)
+	vector.DrawFilledRect(screen, 0, 0, float32(borderThickness), float32(gridSize*scale), borderColor, false)
+	vector.DrawFilledRect(screen, float32(gridSize*scale)-float32(borderThickness), 0, float32(borderThickness), float32(gridSize*scale), borderColor, false)
 }
 
 /*
