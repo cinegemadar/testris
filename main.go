@@ -332,8 +332,8 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	g.drawBoundingBox(screen)
 
 	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Scale(scale, scale)
-	g.applyRotation(op, screen)
+	g.applyRotationToPiece(op, g.activePiece, g.pieceX, g.pieceY)
+	screen.DrawImage(g.activePiece.image, op)
 	g.drawSidebar(screen)
 }
 
@@ -383,14 +383,7 @@ func (g *Game) drawLockedPieces(screen *ebiten.Image) {
 		topLeftX := float64(lp.x * scale)
 		topLeftY := float64(lp.y * scale)
 
-		op.GeoM.Scale(scale, scale)
-
-		// Translate to the top-left corner, rotate around the center, and translate back.
-		op.GeoM.Translate(-float64(lp.width*scale)/2, -float64(lp.height*scale)/2)                 // Move to the center of the piece.
-		op.GeoM.Rotate(getRotationTheta(lp.currentRotation))                                       // Apply rotation.
-		op.GeoM.Translate(topLeftX+float64(lp.width*scale)/2, topLeftY+float64(lp.height*scale)/2) // Translate to locked position.
-
-		// Draw the locked piece.
+		g.applyRotationToPiece(op, lp, lp.x, lp.y)
 		screen.DrawImage(lp.image, op)
 	}
 }
@@ -404,21 +397,32 @@ Parameters:
 - screen: The ebiten.Image to draw the rotated piece onto.
 */
 func (g *Game) applyRotation(op *ebiten.DrawImageOptions, screen *ebiten.Image) {
+/*
+applyRotationToPiece applies the current rotation to a piece and prepares it
+for drawing on the screen.
+
+Parameters:
+- op: The ebiten.DrawImageOptions to apply transformations.
+- piece: The Piece to apply the rotation to.
+- posX: The x position of the piece on the grid.
+- posY: The y position of the piece on the grid.
+*/
+func (g *Game) applyRotationToPiece(op *ebiten.DrawImageOptions, piece *Piece, posX, posY int) {
+	op.GeoM.Scale(scale, scale)
+
 	// Center the rotation point (relative to the piece).
-	centerX := float64((g.pieceX * scale) + (g.activePiece.width*scale)/2)
-	centerY := float64((g.pieceY * scale) + (g.activePiece.height*scale)/2)
+	centerX := float64((posX * scale) + (piece.width*scale)/2)
+	centerY := float64((posY * scale) + (piece.height*scale)/2)
 
 	// Translate to the center of the piece.
-	op.GeoM.Translate(-float64(g.activePiece.width*scale)/2, -float64(g.activePiece.height*scale)/2)
+	op.GeoM.Translate(-float64(piece.width*scale)/2, -float64(piece.height*scale)/2)
 
 	// Rotate around the center.
-	op.GeoM.Rotate(getRotationTheta(g.activePiece.currentRotation))
+	op.GeoM.Rotate(getRotationTheta(piece.currentRotation))
 
 	// Translate the piece back to its grid position.
 	op.GeoM.Translate(centerX, centerY)
-
-	// Draw the rotated piece.
-	screen.DrawImage(g.activePiece.image, op)
+}
 }
 
 /*
