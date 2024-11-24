@@ -39,6 +39,7 @@ type Piece struct {
 	piece_type      string        // Head, Torso, Leg
 	x, y            int           // Position of the piece
 	highScore       int
+}
 
 /*
 loadTopScores loads and returns the top 5 scores from the highscore.txt file.
@@ -71,6 +72,8 @@ func (g *Game) loadTopScores() []int {
 		scores = scores[:5]
 	}
 	return scores
+}
+
 /*
 saveScore appends the current score to the highscore.txt file.
 */
@@ -377,8 +380,8 @@ func (g *Game) drawLockedPieces(screen *ebiten.Image) {
 		op := &ebiten.DrawImageOptions{}
 
 		// Calculate the top-left corner of the locked piece in screen coordinates.
-		topLeftX := float64(lp.x * scale)
-		topLeftY := float64(lp.y * scale)
+		// topLeftX := float64(lp.x * scale)
+		// topLeftY := float64(lp.y * scale)
 
 		g.applyRotationToPiece(op, lp, lp.x, lp.y)
 		screen.DrawImage(lp.image, op)
@@ -418,7 +421,6 @@ func (g *Game) applyRotationToPiece(op *ebiten.DrawImageOptions, piece *Piece, p
 
 	// Translate the piece back to its grid position.
 	op.GeoM.Translate(centerX, centerY)
-}
 }
 
 /*
