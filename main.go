@@ -235,8 +235,8 @@ func (g *Game) Update() error {
 	g.restart() // Always check for restart
 
 	if !g.gameOver {
-		g.movePiece(-1, &g.moveLeftKeyPressed, ebiten.KeyArrowLeft)
-		g.movePiece(1, &g.moveRightKeyPressed, ebiten.KeyArrowRight)
+		g.movePieceInDirection(-1, ebiten.KeyArrowLeft, &g.moveLeftKeyPressed)
+		g.movePieceInDirection(1, ebiten.KeyArrowRight, &g.moveRightKeyPressed)
 		g.rotate()
 		g.drop()
 	}
@@ -304,24 +304,22 @@ func (g *Game) rotate() {
 moveRight moves the active piece one cell to the right if possible
 when the right arrow key is pressed.
 */
-func (g *Game) moveRight() {
-	g.handleKeyPress(ebiten.KeyArrowRight, &g.moveRightKeyPressed, func() {
-		if g.canMove(1, 0) {
-			g.pieceX++
+/*
+movePieceInDirection moves the active piece one cell in the specified direction
+when the corresponding arrow key is pressed.
+
+Parameters:
+- direction: The direction to move the piece (-1 for left, 1 for right).
+- key: The ebiten key to check for the direction.
+- pressed: A pointer to a boolean indicating if the key was previously pressed.
+*/
+func (g *Game) movePieceInDirection(direction int, key ebiten.Key, pressed *bool) {
+	g.handleKeyPress(key, pressed, func() {
+		if g.canMove(direction, 0) {
+			g.pieceX += direction
 		}
 	})
 }
-
-/*
-moveLeft moves the active piece one cell to the left if possible
-when the left arrow key is pressed.
-*/
-func (g *Game) moveLeft() {
-	g.handleKeyPress(ebiten.KeyArrowLeft, &g.moveLeftKeyPressed, func() {
-		if g.canMove(-1, 0) {
-			g.pieceX--
-		}
-	})
 }
 
 /*
