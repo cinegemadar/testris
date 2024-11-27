@@ -1,3 +1,5 @@
+[![Go](https://github.com/cinegemadar/testris/actions/workflows/go.yml/badge.svg)](https://github.com/cinegemadar/testris/actions/workflows/go.yml)
+
 # TESTRis
 
 TESTRis is a simple Tetris-like game implemented in Go using the Ebiten game library. The game features basic Tetris mechanics, including piece rotation, movement, and locking.
