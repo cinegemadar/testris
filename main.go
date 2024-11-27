@@ -41,7 +41,7 @@ type Piece struct {
 	pieceType       string        // Head, Torso, Leg
 	x, y            int           // Position of the piece
 	highScore       int
-	dropKeyPressed     bool
+	dropKeyPressed  bool
 }
 
 /*
@@ -237,6 +237,7 @@ func init() {
 		{image: mustLoadImage("assets/head.png"), currentRotation: 0, width: 3, height: 3, pieceType: "Head"},
 		{image: mustLoadImage("assets/torso.png"), currentRotation: 0, width: 3, height: 3, pieceType: "Torso"},
 		{image: mustLoadImage("assets/leg.png"), currentRotation: 0, width: 3, height: 3, pieceType: "Leg"},
+		{image: mustLoadImage("assets/bomb.png"), currentRotation: 0, width: 3, height: 3, pieceType: "Bomb"},
 	}
 }
 
