@@ -44,6 +44,7 @@ go run main.go
 - **Left Arrow**: Move piece left
 - **Right Arrow**: Move piece right
 - **Space**: Rotate piece
+- **Enter**: Drop piece to its final place
 
 ## Contributing
 
