@@ -32,10 +32,14 @@ jobs:
     - name: Start Xvfb
       run: |
         Xvfb :99 -screen 0 1024x768x16 &
+        echo "Xvfb started"
         export DISPLAY=:99
+        echo "DISPLAY set to $DISPLAY"
 
     - name: Build
       run: go build -v .
 
     - name: Test
-      run: go test -v .
+      run: |
+        export DISPLAY=:99
+        go test -v .
