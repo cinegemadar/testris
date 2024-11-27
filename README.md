@@ -13,7 +13,7 @@ TESTRis is a simple Tetris-like game implemented in Go using the Ebiten game lib
 
 ## Requirements
 
-- Go 1.18 or later
+- Go 1.23
 - Ebiten library
 
 ## Installation
