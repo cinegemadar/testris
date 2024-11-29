@@ -179,7 +179,7 @@ func (g *Game) loadHighScore() int {
 }
 
 type Game struct {
-	grid                [gridSize][gridSize]*ebiten.Image // Store image references for each grid cell
+	grid                [gridSize][gridSize]*Piece        // Store piece references for each grid cell
 	lockedPieces        []*Piece                          // Array to store locked pieces
 	activePiece         *Piece
 	nextPiece           *Piece
@@ -246,7 +246,7 @@ and game state.
 */
 func NewGame() *Game {
 	return &Game{
-		grid:        [gridSize][gridSize]*ebiten.Image{},
+		grid:        [gridSize][gridSize]*Piece{},
 		activePiece: generatePiece(),
 		nextPiece:   generatePiece(),
 	}
@@ -531,6 +531,20 @@ adding it to the list of locked pieces.
 func (g *Game) lockPiece() {
 	lockedPiece := g.activePiece
 	g.lockedPieces = append(g.lockedPieces, lockedPiece)
+
+	// add references to the locked piece in the grid
+	rotatedWidth := lockedPiece.width
+	rotatedHeight := lockedPiece.height
+
+	if lockedPiece.currentRotation % 180 != 0 {
+		rotatedWidth, rotatedHeight = rotatedHeight, rotatedWidth
+	}
+
+	for x := lockedPiece.x; x < lockedPiece.x + rotatedWidth; x++ {
+		for y := lockedPiece.y; y < lockedPiece.y + rotatedHeight; y++ {
+			g.grid[x][y] = lockedPiece
+		}
+	}
 }
 
 /*

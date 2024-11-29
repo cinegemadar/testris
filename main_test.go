@@ -133,6 +133,9 @@ func TestGameLockPiece(t *testing.T) {
 	if len(game.lockedPieces) != 1 {
 		t.Errorf("Expected 1 locked piece, got %d", len(game.lockedPieces))
 	}
+	if game.grid[gridSize/2][0] != piece {
+		t.Errorf("Expected Game.grid refers to the locked piece")
+	}
 }
 
 // TestGameSpawnNewPiece tests the spawnNewPiece method of Game.
