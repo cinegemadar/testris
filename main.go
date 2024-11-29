@@ -39,7 +39,7 @@ type Piece struct {
 	currentRotation int           // Current rotation in degrees (0, 90, 180, 270)
 	width, height   int           // Dimensions of the piece
 	pieceType       string        // Head, Torso, Leg
-	x, y            int           // Position of the piece
+	x, y            int           // Position of the piece (top left corner)
 	highScore       int
 	dropKeyPressed  bool
 }
@@ -68,7 +68,7 @@ dropPiece moves the active piece as far down as possible.
 */
 func (g *Game) dropPiece() {
 	for g.canMove(0, 1) {
-		g.pieceY++
+		g.activePiece.y++
 	}
 	g.lockPiece()
 	g.spawnNewPiece()
@@ -85,7 +85,7 @@ func isColliding(newX, newY, width, height int, piece *Piece) bool {
 func (g *Game) movePiece(direction int, pressed *bool, key ebiten.Key) {
 	g.handleKeyPress(key, pressed, func() {
 		if g.canMove(direction, 0) {
-			g.pieceX += direction
+			g.activePiece.x += direction
 		}
 	})
 }
@@ -183,7 +183,6 @@ type Game struct {
 	lockedPieces        []*Piece                          // Array to store locked pieces
 	activePiece         *Piece
 	nextPiece           *Piece
-	pieceX, pieceY      int // Position of the active piece
 	score               int
 	frameCount          int
 	gameOver            bool
@@ -230,10 +229,10 @@ func LoadImage(path string) (*ebiten.Image, error) {
 	return img, nil
 }
 
-var allPieces []*Piece
+var allPieces []Piece
 
 func init() {
-	allPieces = []*Piece{
+	allPieces = []Piece{
 		{image: mustLoadImage("assets/head.png"), currentRotation: 0, width: 3, height: 3, pieceType: "Head"},
 		{image: mustLoadImage("assets/torso.png"), currentRotation: 0, width: 3, height: 3, pieceType: "Torso"},
 		{image: mustLoadImage("assets/leg.png"), currentRotation: 0, width: 3, height: 3, pieceType: "Leg"},
@@ -248,10 +247,8 @@ and game state.
 func NewGame() *Game {
 	return &Game{
 		grid:        [gridSize][gridSize]*ebiten.Image{},
-		activePiece: allPieces[rand.Intn(len(allPieces))],
-		nextPiece:   allPieces[rand.Intn(len(allPieces))],
-		pieceX:      gridSize / 2,
-		pieceY:      0,
+		activePiece: generatePiece(),
+		nextPiece:   generatePiece(),
 	}
 }
 
@@ -301,7 +298,7 @@ func (g *Game) drop() {
 			g.lockPiece()
 			g.spawnNewPiece()
 		} else {
-			g.pieceY++
+			g.activePiece.y++
 		}
 	}
 }
@@ -346,7 +343,7 @@ Parameters:
 func (g *Game) movePieceInDirection(direction int, key ebiten.Key, pressed *bool) {
 	g.handleKeyPress(key, pressed, func() {
 		if g.canMove(direction, 0) {
-			g.pieceX += direction
+			g.activePiece.x += direction
 		}
 	})
 }
@@ -378,7 +375,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	g.drawBoundingBox(screen)
 
 	op := &ebiten.DrawImageOptions{}
-	g.applyRotationToPiece(op, g.activePiece, g.pieceX, g.pieceY)
+	g.applyRotationToPiece(op, g.activePiece, g.activePiece.x, g.activePiece.y)
 	screen.DrawImage(g.activePiece.image, op)
 	g.drawSidebar(screen)
 }
@@ -467,10 +464,10 @@ Parameters:
 - screen: The ebiten.Image to draw the bounding box onto.
 */
 func (g *Game) drawBoundingBox(screen *ebiten.Image) {
-	vector.DrawFilledRect(screen, float32(g.pieceX*scale), float32(g.pieceY*scale), float32(g.activePiece.width*scale), 1, boundingBoxColor, false)
-	vector.DrawFilledRect(screen, float32(g.pieceX*scale), float32((g.pieceY+g.activePiece.height)*scale), float32(g.activePiece.width*scale), 1, boundingBoxColor, false)
-	vector.DrawFilledRect(screen, float32(g.pieceX*scale), float32(g.pieceY*scale), 1, float32(g.activePiece.height*scale), boundingBoxColor, false)
-	vector.DrawFilledRect(screen, float32((g.pieceX+g.activePiece.width)*scale), float32(g.pieceY*scale), 1, float32(g.activePiece.height*scale), boundingBoxColor, false)
+	vector.DrawFilledRect(screen, float32(g.activePiece.x*scale), float32(g.activePiece.y*scale), float32(g.activePiece.width*scale), 1, boundingBoxColor, false)
+	vector.DrawFilledRect(screen, float32(g.activePiece.x*scale), float32((g.activePiece.y+g.activePiece.height)*scale), float32(g.activePiece.width*scale), 1, boundingBoxColor, false)
+	vector.DrawFilledRect(screen, float32(g.activePiece.x*scale), float32(g.activePiece.y*scale), 1, float32(g.activePiece.height*scale), boundingBoxColor, false)
+	vector.DrawFilledRect(screen, float32((g.activePiece.x+g.activePiece.width)*scale), float32(g.activePiece.y*scale), 1, float32(g.activePiece.height*scale), boundingBoxColor, false)
 }
 
 /*
@@ -511,8 +508,8 @@ Returns:
 - True if the piece can move to the new position, otherwise false.
 */
 func (g *Game) canMove(dx, dy int) bool {
-	newX := g.pieceX + dx
-	newY := g.pieceY + dy
+	newX := g.activePiece.x + dx
+	newY := g.activePiece.y + dy
 
 	if !isWithinBounds(newX, newY, g.activePiece.width, g.activePiece.height, 1, gridSize-1, 1, gridSize-1) {
 		return false
@@ -532,26 +529,35 @@ lockPiece locks the active piece in its current position on the grid,
 adding it to the list of locked pieces.
 */
 func (g *Game) lockPiece() {
-	lockedPiece := *g.activePiece
-	lockedPiece.x = g.pieceX
-	lockedPiece.y = g.pieceY
-	g.lockedPieces = append(g.lockedPieces, &lockedPiece)
+	lockedPiece := g.activePiece
+	g.lockedPieces = append(g.lockedPieces, lockedPiece)
 }
 
 /*
-spawnNewPiece selects a new active piece from the available pieces and
-positions it at the top of the grid.
+spawnNewPiece make the next piece to be the active piece and
+creates the next active piece from the available pieces.
 */
 func (g *Game) spawnNewPiece() {
-	if g.pieceY == 0 && !g.canMove(0, 1) {
+	if g.activePiece.y == 0 && !g.canMove(0, 1) {
 		g.endGame()
 		return
 	}
 
 	g.activePiece = g.nextPiece
-	g.nextPiece = allPieces[rand.Intn(len(allPieces))]
-	g.pieceX = gridSize / 2
-	g.pieceY = 0
+	g.nextPiece = generatePiece()
+}
+
+/*
+generatePiece creates a new piece from the available pieces and
+positions it at the top of the grid.
+*/
+func generatePiece() *Piece {
+	newPiece := allPieces[rand.Intn(len(allPieces))]
+	newPiece.x = gridSize / 2
+	newPiece.y = 0
+	newPiece.currentRotation = rand.Intn(4) * 90
+
+	return &newPiece
 }
 
 /*
