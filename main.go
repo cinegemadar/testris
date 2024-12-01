@@ -433,7 +433,7 @@ func (g *Game) applyRotationToPiece(op *ebiten.DrawImageOptions, piece *Piece) {
 	op.GeoM.Translate(float64(-w), float64(-h))
 
 	// Rotate around the center.
-	op.GeoM.Rotate(getRotationTheta(piece.currentRotation))
+	op.GeoM.Rotate(-getRotationTheta(piece.currentRotation))
 
 	// Translate the piece back to its grid position.
 	op.GeoM.Translate(float64(centerX), float64(centerY))
