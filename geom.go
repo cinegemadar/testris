@@ -7,6 +7,10 @@ import (
 type Pos struct { x, y int }  // position in the grid
 type Size struct { w, h int } // dimensions of a piece in the grid
 
+func angleDegEq(ang1, ang2 int) bool {
+	return (ang1 - ang2) % 360 == 0
+}
+
 func rotatePos(pos Pos, angleDeg int) Pos {
 	switch d := (angleDeg + 720) % 360; d {
 		case 90:  return Pos{-pos.y, pos.x}
@@ -47,6 +51,10 @@ func grid2ScrSize(w, h float32) (float32, float32) {
 
 func isWithinBounds(pos Pos, size Size, boundsMin, boundsMax Pos) bool {
 	return pos.x + size.w <= boundsMax.x && pos.x >= boundsMin.x && pos.y + size.h <= boundsMax.y && pos.y >= boundsMin.y
+}
+
+func isOverlap(pos1 Pos, size1 Size, pos2 Pos, size2 Size) bool {
+	return pos1.x < pos2.x + size2.w && pos2.x < pos1.x + size1.w && pos1.y < pos2.y + size2.h && pos2.y < pos1.y + size1.h
 }
 
 func (piece *Piece) isColliding(pos Pos, size Size) bool {

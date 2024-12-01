@@ -9,6 +9,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"slices"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
@@ -39,7 +40,6 @@ type Piece struct {
 	size            Size          // Dimensions of the piece
 	pieceType       string        // Head, Torso, Leg
 	pos             Pos           // Position of the piece (top left corner)
-	highScore       int
 	dropKeyPressed  bool
 }
 
@@ -70,6 +70,7 @@ func (g *Game) dropPiece() {
 		g.activePiece.pos.y++
 	}
 	g.lockPiece()
+	g.joinAndScorePieces( []Pos{g.activePiece.pos} )
 	g.spawnNewPiece()
 }
 
@@ -208,6 +209,7 @@ func LoadImage(path string) (*ebiten.Image, error) {
 }
 
 var allPieces []Piece
+var allBodies []*Body
 
 func init() {
 	allPieces = []Piece{
@@ -215,6 +217,28 @@ func init() {
 		{image: mustLoadImage("assets/torso.png"), currentRotation: 0, size: Size{3, 3}, pieceType: "Torso"},
 		{image: mustLoadImage("assets/leg.png"), currentRotation: 0, size: Size{3, 3}, pieceType: "Leg"},
 		{image: mustLoadImage("assets/bomb.png"), currentRotation: 0, size: Size{3, 3}, pieceType: "Bomb"},
+	}
+
+	allBodies = []*Body{
+		&Body{ // bar shape, consists of 4 parts
+			name: "longi",
+			score: 2000,
+			bodyPieces: []BodyPiece{ // defined as vertical bar
+				BodyPiece{pos:Pos{0, 0}, rotation:0, pieceType:"Head"},
+				BodyPiece{pos:Pos{0, 3}, rotation:0, pieceType:"Torso"},
+				BodyPiece{pos:Pos{0, 6}, rotation:0, pieceType:"Torso"},
+				BodyPiece{pos:Pos{0, 9}, rotation:0, pieceType:"Leg"},
+			},
+		},
+		&Body{ // bar shape, consists of 3 parts
+			name: "fellow",
+			score: 1000,
+			bodyPieces: []BodyPiece{ // defined as vertical bar
+				BodyPiece{pos:Pos{0, 0}, rotation:0, pieceType:"Head"},
+				BodyPiece{pos:Pos{0, 3}, rotation:0, pieceType:"Torso"},
+				BodyPiece{pos:Pos{0, 6}, rotation:0, pieceType:"Leg"},
+			},
+		},
 	}
 }
 
@@ -280,6 +304,7 @@ func (g *Game) drop() {
 	if g.frameCount%speed == 0 {
 		if !g.canMove(0, 1) {
 			g.lockPiece()
+			g.joinAndScorePieces( []Pos{g.activePiece.pos} )
 			g.spawnNewPiece()
 		} else {
 			g.activePiece.pos.y++
@@ -546,6 +571,47 @@ func (g *Game) spawnNewPiece() {
 	g.nextPiece = generatePiece()
 }
 
+func (g *Game) joinAndScorePieces(positions []Pos) {
+	log.Printf("joinAndScorePieces(pos: %v)", positions)
+
+	for 0 < len(positions) {
+		pos := positions[0]
+		positions = positions[1:]
+
+		piece := g.grid[pos.x][pos.y]
+
+		if piece != nil {
+			for _, body := range allBodies {
+				posList := body.matchAtLockedPiece(g, piece)
+
+				g.score += body.score
+				g.removePieces(posList)
+
+				// todo: compact pieces
+			}
+		}
+	}
+}
+
+func (g *Game) removePieces(positions []Pos) {
+	log.Printf("removePieces(pos: %v)", positions)
+	for _, pos := range positions {
+		piece := g.grid[pos.x][pos.y]
+		// remove references to the locked piece in the grid
+		g.changePieceInGrid(piece, false)
+		
+		idx := slices.Index(g.lockedPieces, piece)
+		if idx < 0 {
+			log.Fatal("Piece %v is not found in grid!")
+		} else {
+			// remove item
+			newLen := len(g.lockedPieces)-1
+			g.lockedPieces[idx] = g.lockedPieces[newLen]
+			g.lockedPieces = g.lockedPieces[:newLen]
+		}
+	}
+}
+
 /*
 generatePiece creates a new piece from the available pieces and
 positions it at the top of the grid.
@@ -566,6 +632,11 @@ func main() {
 	log.SetFlags(log.Ltime | log.Lshortfile)
 	ebiten.SetWindowSize(screenWidth, screenHeight)
 	ebiten.SetWindowTitle("TESTRis - Fixed Piece Spawning and Locking")
+
+	// initialze bodies
+	for _, body := range allBodies {
+		body.init()
+	}
 
 	game := NewGame()
 	if err := ebiten.RunGame(game); err != nil {
