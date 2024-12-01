@@ -563,6 +563,7 @@ func generatePiece() *Piece {
 main initializes the game window and starts the game loop.
 */
 func main() {
+	log.SetFlags(log.Ltime | log.Lshortfile)
 	ebiten.SetWindowSize(screenWidth, screenHeight)
 	ebiten.SetWindowTitle("TESTRis - Fixed Piece Spawning and Locking")
 
