@@ -513,10 +513,21 @@ func (g *Game) lockPiece() {
 	g.lockedPieces = append(g.lockedPieces, lockedPiece)
 
 	// add references to the locked piece in the grid
-	rotatedSize := rotateSize(lockedPiece.size, lockedPiece.currentRotation)
-	for x := lockedPiece.pos.x; x < lockedPiece.pos.x + rotatedSize.w; x++ {
-		for y := lockedPiece.pos.y; y < lockedPiece.pos.y + rotatedSize.h; y++ {
-			g.grid[x][y] = lockedPiece
+	g.changePieceInGrid(lockedPiece, true)
+}
+
+/*
+add/remove references to the locked piece in the grid
+*/
+func (g *Game) changePieceInGrid(piece *Piece, add bool) {
+	rotatedSize := rotateSize(piece.size, piece.currentRotation)
+	for x := piece.pos.x; x < piece.pos.x + rotatedSize.w; x++ {
+		for y := piece.pos.y; y < piece.pos.y + rotatedSize.h; y++ {
+			if add {
+				g.grid[x][y] = piece
+			} else {
+				g.grid[x][y] = nil
+			}
 		}
 	}
 }
