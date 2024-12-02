@@ -248,6 +248,15 @@ func init() {
 				BodyPiece{pos: Pos{0, 6}, rotation: 0, pieceType: "Leg"},
 			},
 		},
+		&Body{ // bar shape, consists of 3 parts
+			name:  "broken",
+			score: 3000,
+			bodyPieces: []BodyPiece{ // defined as L shape
+				BodyPiece{pos: Pos{0, 0}, rotation: 90, pieceType: "Head"},
+				BodyPiece{pos: Pos{3, 0}, rotation: 0, pieceType: "BrokenTorso"},
+				BodyPiece{pos: Pos{3, 3}, rotation: 0, pieceType: "Leg"},
+			},
+		},
 	}
 }
 
