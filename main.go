@@ -69,7 +69,7 @@ func (g *Game) dropPiece() {
 		g.activePiece.pos.y++
 	}
 	g.lockPiece(g.activePiece)
-	g.joinAndScorePieces([]Pos{g.activePiece.pos})
+	g.joinAndScorePieces([]*Piece{g.activePiece})
 	g.spawnNewPiece()
 }
 
@@ -303,7 +303,7 @@ func (g *Game) drop() {
 	if g.frameCount%speed == 0 {
 		if !g.canMove(g.activePiece, 0, 1) {
 			g.lockPiece(g.activePiece)
-			g.joinAndScorePieces([]Pos{g.activePiece.pos})
+			g.joinAndScorePieces([]*Piece{g.activePiece})
 			g.spawnNewPiece()
 		} else {
 			g.activePiece.pos.y++
@@ -602,15 +602,13 @@ func (g *Game) spawnNewPiece() {
 	g.nextPiece = generatePiece()
 }
 
-func (g *Game) joinAndScorePieces(positions []Pos) {
-	log.Printf("joinAndScorePieces(pos: %v)", positions)
+func (g *Game) joinAndScorePieces(pieces []*Piece) {
+	log.Printf("joinAndScorePieces(pieces: %v)", pieces)
 
 	joinedCnt := 0
-	for 0 < len(positions) {
-		pos := positions[0]
-		positions = positions[1:]
-
-		piece := g.grid[pos.x][pos.y]
+	for 0 < len(pieces) {
+		piece := pieces[0]
+		pieces = pieces[1:]
 
 		if piece != nil {
 			for _, body := range allBodies {
@@ -626,7 +624,12 @@ func (g *Game) joinAndScorePieces(positions []Pos) {
 	}
 
 	if 0 < joinedCnt {
-		g.compactGrid()
+		pieces = g.compactGrid()
+
+		// if any pieces has fallen => recurse
+		if pieces != nil {
+			g.joinAndScorePieces(pieces)
+		}
 	}
 }
 
@@ -637,7 +640,9 @@ func (g *Game) removePieces(positions []Pos) {
 	}
 }
 
-func (g *Game) compactGrid() {
+func (g *Game) compactGrid() []*Piece {
+	fallenPieces := make([]*Piece, 0)
+
 	for i := len(g.lockedPieces) - 1; 0 <= i; i-- {
 		piece := g.lockedPieces[i]
 
@@ -653,8 +658,12 @@ func (g *Game) compactGrid() {
 			g.unlockPiece(piece)
 			piece.pos.y += dy
 			g.lockPiece(piece)
+			
+			fallenPieces = append(fallenPieces, piece)
 		}
 	}
+	
+	return fallenPieces
 }
 
 /*
