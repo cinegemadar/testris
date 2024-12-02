@@ -6,10 +6,10 @@ import (
 	"log"
 	"math/rand"
 	"os"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
-	"slices"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
@@ -70,7 +70,7 @@ func (g *Game) dropPiece() {
 		g.activePiece.pos.y++
 	}
 	g.lockPiece()
-	g.joinAndScorePieces( []Pos{g.activePiece.pos} )
+	g.joinAndScorePieces([]Pos{g.activePiece.pos})
 	g.spawnNewPiece()
 }
 
@@ -171,8 +171,8 @@ func (g *Game) loadHighScore() int {
 }
 
 type Game struct {
-	grid                [][]*Piece    // Store piece references for each grid cell
-	lockedPieces        []*Piece      // Array to store locked pieces
+	grid                [][]*Piece // Store piece references for each grid cell
+	lockedPieces        []*Piece   // Array to store locked pieces
 	activePiece         *Piece
 	nextPiece           *Piece
 	score               int
@@ -221,22 +221,22 @@ func init() {
 
 	allBodies = []*Body{
 		&Body{ // bar shape, consists of 4 parts
-			name: "longi",
+			name:  "longi",
 			score: 2000,
 			bodyPieces: []BodyPiece{ // defined as vertical bar
-				BodyPiece{pos:Pos{0, 0}, rotation:0, pieceType:"Head"},
-				BodyPiece{pos:Pos{0, 3}, rotation:0, pieceType:"Torso"},
-				BodyPiece{pos:Pos{0, 6}, rotation:0, pieceType:"Torso"},
-				BodyPiece{pos:Pos{0, 9}, rotation:0, pieceType:"Leg"},
+				BodyPiece{pos: Pos{0, 0}, rotation: 0, pieceType: "Head"},
+				BodyPiece{pos: Pos{0, 3}, rotation: 0, pieceType: "Torso"},
+				BodyPiece{pos: Pos{0, 6}, rotation: 0, pieceType: "Torso"},
+				BodyPiece{pos: Pos{0, 9}, rotation: 0, pieceType: "Leg"},
 			},
 		},
 		&Body{ // bar shape, consists of 3 parts
-			name: "fellow",
+			name:  "fellow",
 			score: 1000,
 			bodyPieces: []BodyPiece{ // defined as vertical bar
-				BodyPiece{pos:Pos{0, 0}, rotation:0, pieceType:"Head"},
-				BodyPiece{pos:Pos{0, 3}, rotation:0, pieceType:"Torso"},
-				BodyPiece{pos:Pos{0, 6}, rotation:0, pieceType:"Leg"},
+				BodyPiece{pos: Pos{0, 0}, rotation: 0, pieceType: "Head"},
+				BodyPiece{pos: Pos{0, 3}, rotation: 0, pieceType: "Torso"},
+				BodyPiece{pos: Pos{0, 6}, rotation: 0, pieceType: "Leg"},
 			},
 		},
 	}
@@ -290,7 +290,7 @@ func (g *Game) restart() {
 	if ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) {
 		x, y := ebiten.CursorPosition()
 		sidebarX := screenWidth - sidebarWidth
-		if isWithinBounds(Pos{x, y}, Size{0, 0}, Pos{sidebarX+10, 160}, Pos{sidebarX+110, 180}) {
+		if isWithinBounds(Pos{x, y}, Size{0, 0}, Pos{sidebarX + 10, 160}, Pos{sidebarX + 110, 180}) {
 			g.Reset()
 		}
 	}
@@ -304,7 +304,7 @@ func (g *Game) drop() {
 	if g.frameCount%speed == 0 {
 		if !g.canMove(0, 1) {
 			g.lockPiece()
-			g.joinAndScorePieces( []Pos{g.activePiece.pos} )
+			g.joinAndScorePieces([]Pos{g.activePiece.pos})
 			g.spawnNewPiece()
 		} else {
 			g.activePiece.pos.y++
@@ -451,8 +451,8 @@ func (g *Game) applyRotationToPiece(op *ebiten.DrawImageOptions, piece *Piece) {
 
 	// Center the rotation point (relative to the piece).
 	x, y := grid2ScrPos(float32(piece.pos.x), float32(piece.pos.y))
-	w, h := grid2ScrSize(float32(piece.size.w) / 2, float32(piece.size.h) / 2)
-	centerX, centerY := x + w, y + h
+	w, h := grid2ScrSize(float32(piece.size.w)/2, float32(piece.size.h)/2)
+	centerX, centerY := x+w, y+h
 
 	// Translate to the center of the piece.
 	op.GeoM.Translate(float64(-w), float64(-h))
@@ -474,7 +474,7 @@ Parameters:
 func (g *Game) drawBoundingBox(screen *ebiten.Image) {
 	x, y := grid2ScrPos(float32(g.activePiece.pos.x), float32(g.activePiece.pos.y))
 	w, h := grid2ScrSize(float32(g.activePiece.size.w), float32(g.activePiece.size.h))
-	vector.StrokeRect(screen, x, y, w + 1, h + 1, 1, boundingBoxColor, false)
+	vector.StrokeRect(screen, x, y, w+1, h+1, 1, boundingBoxColor, false)
 }
 
 /*
@@ -485,7 +485,7 @@ Parameters:
 */
 func drawBorder(screen *ebiten.Image) {
 	x, y := grid2ScrPos(0.5, 0.5)
-	w, h := grid2ScrSize(float32(gridSize.w - 1), float32(gridSize.h - 1))
+	w, h := grid2ScrSize(float32(gridSize.w-1), float32(gridSize.h-1))
 	vector.StrokeRect(screen, x, y, w, h, scale, boundingBoxColor, false)
 }
 
@@ -516,7 +516,7 @@ Returns:
 func (g *Game) canMove(dx, dy int) bool {
 	newPos := Pos{g.activePiece.pos.x + dx, g.activePiece.pos.y + dy}
 
-	if !isWithinBounds(newPos, g.activePiece.size, Pos{1, 1}, Pos{gridSize.w-1, gridSize.h-1}) {
+	if !isWithinBounds(newPos, g.activePiece.size, Pos{1, 1}, Pos{gridSize.w - 1, gridSize.h - 1}) {
 		return false
 	}
 
@@ -546,8 +546,8 @@ add/remove references to the locked piece in the grid
 */
 func (g *Game) changePieceInGrid(piece *Piece, add bool) {
 	rotatedSize := rotateSize(piece.size, piece.currentRotation)
-	for x := piece.pos.x; x < piece.pos.x + rotatedSize.w; x++ {
-		for y := piece.pos.y; y < piece.pos.y + rotatedSize.h; y++ {
+	for x := piece.pos.x; x < piece.pos.x+rotatedSize.w; x++ {
+		for y := piece.pos.y; y < piece.pos.y+rotatedSize.h; y++ {
 			if add {
 				g.grid[x][y] = piece
 			} else {
@@ -599,13 +599,13 @@ func (g *Game) removePieces(positions []Pos) {
 		piece := g.grid[pos.x][pos.y]
 		// remove references to the locked piece in the grid
 		g.changePieceInGrid(piece, false)
-		
+
 		idx := slices.Index(g.lockedPieces, piece)
 		if idx < 0 {
-			log.Fatal("Piece %v is not found in grid!")
+			log.Fatal("Piece is not found in grid!")
 		} else {
 			// remove item
-			newLen := len(g.lockedPieces)-1
+			newLen := len(g.lockedPieces) - 1
 			g.lockedPieces[idx] = g.lockedPieces[newLen]
 			g.lockedPieces = g.lockedPieces[:newLen]
 		}
