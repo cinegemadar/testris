@@ -484,8 +484,9 @@ Parameters:
 - screen: The ebiten.Image to draw the border onto.
 */
 func drawBorder(screen *ebiten.Image) {
-	x, y := grid2ScrPos(0.5, 0.5)
-	w, h := grid2ScrSize(float32(gridSize.w-1), float32(gridSize.h-1))
+	x, y := grid2ScrPos(0.5, -0.5)
+	w, h := grid2ScrSize(float32(gridSize.w-1), float32(gridSize.h))
+	// draw a rectangle with thick border. the top border is invisible (intentionally outside of the screen) intentionally.
 	vector.StrokeRect(screen, x, y, w, h, scale, boundingBoxColor, false)
 }
 
