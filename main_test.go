@@ -127,11 +127,14 @@ func TestGameCanMove(t *testing.T) {
 // TestGameLockPiece tests the lockPiece method of Game.
 func TestGameLockPiece(t *testing.T) {
 	game := NewGame()
-	game.activePiece.x = game.pieceX
-	game.activePiece.y = game.pieceY
+	piece := game.activePiece
+
 	game.lockPiece()
 	if len(game.lockedPieces) != 1 {
 		t.Errorf("Expected 1 locked piece, got %d", len(game.lockedPieces))
+	}
+	if game.grid[gridSize.w/2][0] != piece {
+		t.Errorf("Expected Game.grid refers to the locked piece")
 	}
 }
 
