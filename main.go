@@ -37,10 +37,18 @@ var (
 type Piece struct {
 	image           *ebiten.Image // Single image for the piece
 	currentRotation int           // Current rotation in degrees (0, 90, 180, 270)
-	size            Size          // Dimensions of the piece
+	size            Size          // Dimensions of the piece on the grid
 	pieceType       string        // Head, Torso, Leg
-	pos             Pos           // Position of the piece (top left corner)
+	pos             Pos           // Position of the piece on the grid (top left corner)
 	dropKeyPressed  bool
+}
+
+/*
+Returns scale which also considers dimensions of the image.
+The size of the rendered image must be Piece.size on grid independently of the image resolution or size.
+*/
+func (piece *Piece) getScale() (float64, float64) {
+	return scale * float64(piece.size.w) / float64(piece.image.Bounds().Max.X), scale * float64(piece.size.h) / float64(piece.image.Bounds().Max.Y)
 }
 
 /*
@@ -213,10 +221,11 @@ var allBodies []*Body
 
 func init() {
 	allPieces = []Piece{
-		{image: mustLoadImage("assets/head.png"), currentRotation: 0, size: Size{3, 3}, pieceType: "Head"},
-		{image: mustLoadImage("assets/torso.png"), currentRotation: 0, size: Size{3, 3}, pieceType: "Torso"},
-		{image: mustLoadImage("assets/leg.png"), currentRotation: 0, size: Size{3, 3}, pieceType: "Leg"},
-		{image: mustLoadImage("assets/bomb.png"), currentRotation: 0, size: Size{3, 3}, pieceType: "Bomb"},
+		{image: mustLoadImage("assets/head10x10.png"), currentRotation: 0, size: Size{3, 3}, pieceType: "Head"},
+		{image: mustLoadImage("assets/torso10x10.png"), currentRotation: 0, size: Size{3, 3}, pieceType: "Torso"},
+		{image: mustLoadImage("assets/broken_torso10x10.png"), currentRotation: 0, size: Size{3, 3}, pieceType: "BrokenTorso"},
+		{image: mustLoadImage("assets/leg10x10.png"), currentRotation: 0, size: Size{3, 3}, pieceType: "Leg"},
+		{image: mustLoadImage("assets/bomb11x11.png"), currentRotation: 0, size: Size{3, 3}, pieceType: "Bomb"},
 	}
 
 	allBodies = []*Body{
@@ -237,6 +246,15 @@ func init() {
 				BodyPiece{pos: Pos{0, 0}, rotation: 0, pieceType: "Head"},
 				BodyPiece{pos: Pos{0, 3}, rotation: 0, pieceType: "Torso"},
 				BodyPiece{pos: Pos{0, 6}, rotation: 0, pieceType: "Leg"},
+			},
+		},
+		&Body{ // bar shape, consists of 3 parts
+			name:  "broken",
+			score: 3000,
+			bodyPieces: []BodyPiece{ // defined as L shape
+				BodyPiece{pos: Pos{0, 0}, rotation: 90, pieceType: "Head"},
+				BodyPiece{pos: Pos{3, 0}, rotation: 0, pieceType: "BrokenTorso"},
+				BodyPiece{pos: Pos{3, 3}, rotation: 0, pieceType: "Leg"},
 			},
 		},
 	}
@@ -402,7 +420,8 @@ func (g *Game) drawSidebar(screen *ebiten.Image) {
 	// Draw "Next Piece"
 	ebitenutil.DebugPrintAt(screen, "NEXT PIECE", sidebarX+10, 20)
 	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Scale(scale, scale) // Apply scaling to the next piece
+	imageScaleX, imageScaleY := g.nextPiece.getScale()
+	op.GeoM.Scale(imageScaleX, imageScaleY) // Apply scaling to the next piece
 	op.GeoM.Translate(float64(sidebarX+40), 50)
 	screen.DrawImage(g.nextPiece.image, op)
 
@@ -447,7 +466,8 @@ Parameters:
 - piece: The Piece to apply the rotation to.
 */
 func (g *Game) applyRotationToPiece(op *ebiten.DrawImageOptions, piece *Piece) {
-	op.GeoM.Scale(scale, scale)
+	imageScaleX, imageScaleY := piece.getScale()
+	op.GeoM.Scale(imageScaleX, imageScaleY)
 
 	// Center the rotation point (relative to the piece).
 	x, y := grid2ScrPos(float32(piece.pos.x), float32(piece.pos.y))
@@ -484,8 +504,9 @@ Parameters:
 - screen: The ebiten.Image to draw the border onto.
 */
 func drawBorder(screen *ebiten.Image) {
-	x, y := grid2ScrPos(0.5, 0.5)
-	w, h := grid2ScrSize(float32(gridSize.w-1), float32(gridSize.h-1))
+	x, y := grid2ScrPos(0.5, -0.5)
+	w, h := grid2ScrSize(float32(gridSize.w-1), float32(gridSize.h))
+	// draw a rectangle with thick border. the top border is invisible (intentionally outside of the screen) intentionally.
 	vector.StrokeRect(screen, x, y, w, h, scale, boundingBoxColor, false)
 }
 
