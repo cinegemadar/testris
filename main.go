@@ -66,17 +66,17 @@ func (g *Game) handleKeyRelease(key ebiten.Key, pressed *bool, action func()) {
 dropPiece moves the active piece as far down as possible.
 */
 func (g *Game) dropPiece() {
-	for g.canMove(0, 1) {
+	for g.canMove(g.activePiece, 0, 1) {
 		g.activePiece.pos.y++
 	}
-	g.lockPiece()
+	g.lockPiece(g.activePiece)
 	g.joinAndScorePieces([]Pos{g.activePiece.pos})
 	g.spawnNewPiece()
 }
 
 func (g *Game) movePiece(direction int, pressed *bool, key ebiten.Key) {
 	g.handleKeyPress(key, pressed, func() {
-		if g.canMove(direction, 0) {
+		if g.canMove(g.activePiece, direction, 0) {
 			g.activePiece.pos.x += direction
 		}
 	})
@@ -302,8 +302,8 @@ locking it in place if it cannot move further.
 */
 func (g *Game) drop() {
 	if g.frameCount%speed == 0 {
-		if !g.canMove(0, 1) {
-			g.lockPiece()
+		if !g.canMove(g.activePiece, 0, 1) {
+			g.lockPiece(g.activePiece)
 			g.joinAndScorePieces([]Pos{g.activePiece.pos})
 			g.spawnNewPiece()
 		} else {
@@ -351,7 +351,7 @@ Parameters:
 */
 func (g *Game) movePieceInDirection(direction int, key ebiten.Key, pressed *bool) {
 	g.handleKeyPress(key, pressed, func() {
-		if g.canMove(direction, 0) {
+		if g.canMove(g.activePiece, direction, 0) {
 			g.activePiece.pos.x += direction
 		}
 	})
@@ -513,15 +513,16 @@ Parameters:
 Returns:
 - True if the piece can move to the new position, otherwise false.
 */
-func (g *Game) canMove(dx, dy int) bool {
-	newPos := Pos{g.activePiece.pos.x + dx, g.activePiece.pos.y + dy}
+func (g *Game) canMove(piece *Piece, dx, dy int) bool {
+	newPos := Pos{piece.pos.x + dx, piece.pos.y + dy}
+	size := rotateSize(piece.size, piece.currentRotation)
 
-	if !isWithinBounds(newPos, g.activePiece.size, Pos{1, 1}, Pos{gridSize.w - 1, gridSize.h - 1}) {
+	if !isWithinBounds(newPos, size, Pos{1, 1}, Pos{gridSize.w - 1, gridSize.h - 1}) {
 		return false
 	}
 
 	for _, piece := range g.lockedPieces {
-		if piece.isColliding(newPos, g.activePiece.size) {
+		if piece.isColliding(newPos, size) {
 			return false
 		}
 	}
@@ -533,12 +534,11 @@ func (g *Game) canMove(dx, dy int) bool {
 lockPiece locks the active piece in its current position on the grid,
 adding it to the list of locked pieces.
 */
-func (g *Game) lockPiece() {
-	lockedPiece := g.activePiece
-	g.lockedPieces = append(g.lockedPieces, lockedPiece)
+func (g *Game) lockPiece(piece *Piece) {
+	g.lockedPieces = append(g.lockedPieces, piece)
 
 	// add references to the locked piece in the grid
-	g.changePieceInGrid(lockedPiece, true)
+	g.changePieceInGrid(piece, true)
 }
 
 /*
@@ -562,7 +562,7 @@ spawnNewPiece make the next piece to be the active piece and
 creates the next active piece from the available pieces.
 */
 func (g *Game) spawnNewPiece() {
-	if g.activePiece.pos.y == 0 && !g.canMove(0, 1) {
+	if g.activePiece.pos.y == 0 && !g.canMove(g.activePiece, 0, 1) {
 		g.endGame()
 		return
 	}
