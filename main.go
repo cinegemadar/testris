@@ -22,12 +22,12 @@ const (
 	screenWidth  = 800
 	screenHeight = 600
 	sidebarWidth = 140
-	speed        = 10
-	scale        = 16 // Unified scale factor for cells and sprites
+	speed        = 25
+	scale        = 30 // Unified scale factor for cells and sprites
 )
 
 var (
-	gridSize         = Size{30, 30}
+	gridSize         = Size{18, 18}
 	borderColor      = color.RGBA{R: 70, G: 255, B: 255, A: 255}
 	boundingBoxColor = color.RGBA{R: 255, G: 255, B: 0, A: 255}
 	sidebarColor     = color.RGBA{R: 130, G: 130, B: 130, A: 255}
@@ -221,11 +221,11 @@ var allBodies []*Body
 
 func init() {
 	allPieces = []Piece{
-		{image: mustLoadImage("assets/head10x10.png"), currentRotation: 0, size: Size{3, 3}, pieceType: "Head"},
-		{image: mustLoadImage("assets/torso10x10.png"), currentRotation: 0, size: Size{3, 3}, pieceType: "Torso"},
-		{image: mustLoadImage("assets/broken_torso10x10.png"), currentRotation: 0, size: Size{3, 3}, pieceType: "BrokenTorso"},
-		{image: mustLoadImage("assets/leg10x10.png"), currentRotation: 0, size: Size{3, 3}, pieceType: "Leg"},
-		{image: mustLoadImage("assets/bomb11x11.png"), currentRotation: 0, size: Size{3, 3}, pieceType: "Bomb"},
+		{image: mustLoadImage("assets/head10x10.png"), currentRotation: 0, size: Size{1, 1}, pieceType: "Head"},
+		{image: mustLoadImage("assets/torso10x10.png"), currentRotation: 0, size: Size{1, 1}, pieceType: "Torso"},
+		{image: mustLoadImage("assets/broken_torso10x10.png"), currentRotation: 0, size: Size{1, 1}, pieceType: "BrokenTorso"},
+		{image: mustLoadImage("assets/leg10x10.png"), currentRotation: 0, size: Size{1, 1}, pieceType: "Leg"},
+		{image: mustLoadImage("assets/bomb11x11.png"), currentRotation: 0, size: Size{1, 1}, pieceType: "Bomb"},
 	}
 
 	allBodies = []*Body{
