@@ -221,10 +221,11 @@ var allBodies []*Body
 
 func init() {
 	allPieces = []Piece{
-		{image: mustLoadImage("assets/head.png"), currentRotation: 0, size: Size{3, 3}, pieceType: "Head"},
-		{image: mustLoadImage("assets/torso.png"), currentRotation: 0, size: Size{3, 3}, pieceType: "Torso"},
-		{image: mustLoadImage("assets/leg.png"), currentRotation: 0, size: Size{3, 3}, pieceType: "Leg"},
-		{image: mustLoadImage("assets/bomb.png"), currentRotation: 0, size: Size{3, 3}, pieceType: "Bomb"},
+		{image: mustLoadImage("assets/head10x10.png"), currentRotation: 0, size: Size{3, 3}, pieceType: "Head"},
+		{image: mustLoadImage("assets/torso10x10.png"), currentRotation: 0, size: Size{3, 3}, pieceType: "Torso"},
+		{image: mustLoadImage("assets/broken_torso10x10.png"), currentRotation: 0, size: Size{3, 3}, pieceType: "BrokenTorso"},
+		{image: mustLoadImage("assets/leg10x10.png"), currentRotation: 0, size: Size{3, 3}, pieceType: "Leg"},
+		{image: mustLoadImage("assets/bomb11x11.png"), currentRotation: 0, size: Size{3, 3}, pieceType: "Bomb"},
 	}
 
 	allBodies = []*Body{
