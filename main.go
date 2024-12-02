@@ -594,7 +594,6 @@ func (g *Game) joinAndScorePieces(positions []Pos) {
 }
 
 func (g *Game) removePieces(positions []Pos) {
-	log.Printf("removePieces(pos: %v)", positions)
 	for _, pos := range positions {
 		piece := g.grid[pos.x][pos.y]
 		// remove references to the locked piece in the grid
@@ -629,7 +628,7 @@ func generatePiece() *Piece {
 main initializes the game window and starts the game loop.
 */
 func main() {
-	log.SetFlags(log.Ltime | log.Lshortfile)
+	log.SetFlags(log.Ltime)
 	ebiten.SetWindowSize(screenWidth, screenHeight)
 	ebiten.SetWindowTitle("TESTRis - Fixed Piece Spawning and Locking")
 
