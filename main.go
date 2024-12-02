@@ -37,10 +37,18 @@ var (
 type Piece struct {
 	image           *ebiten.Image // Single image for the piece
 	currentRotation int           // Current rotation in degrees (0, 90, 180, 270)
-	size            Size          // Dimensions of the piece
+	size            Size          // Dimensions of the piece on the grid
 	pieceType       string        // Head, Torso, Leg
-	pos             Pos           // Position of the piece (top left corner)
+	pos             Pos           // Position of the piece on the grid (top left corner)
 	dropKeyPressed  bool
+}
+
+/*
+Returns scale which also considers dimensions of the image.
+The size of the rendered image must be Piece.size on grid independently of the image resolution or size.
+*/
+func (piece *Piece) getScale() (float64, float64) {
+	return scale * float64(piece.size.w) / float64(piece.image.Bounds().Max.X), scale * float64(piece.size.h) / float64(piece.image.Bounds().Max.Y)
 }
 
 /*
@@ -402,7 +410,8 @@ func (g *Game) drawSidebar(screen *ebiten.Image) {
 	// Draw "Next Piece"
 	ebitenutil.DebugPrintAt(screen, "NEXT PIECE", sidebarX+10, 20)
 	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Scale(scale, scale) // Apply scaling to the next piece
+	imageScaleX, imageScaleY := g.nextPiece.getScale()
+	op.GeoM.Scale(imageScaleX, imageScaleY) // Apply scaling to the next piece
 	op.GeoM.Translate(float64(sidebarX+40), 50)
 	screen.DrawImage(g.nextPiece.image, op)
 
@@ -447,7 +456,8 @@ Parameters:
 - piece: The Piece to apply the rotation to.
 */
 func (g *Game) applyRotationToPiece(op *ebiten.DrawImageOptions, piece *Piece) {
-	op.GeoM.Scale(scale, scale)
+	imageScaleX, imageScaleY := piece.getScale()
+	op.GeoM.Scale(imageScaleX, imageScaleY)
 
 	// Center the rotation point (relative to the piece).
 	x, y := grid2ScrPos(float32(piece.pos.x), float32(piece.pos.y))
