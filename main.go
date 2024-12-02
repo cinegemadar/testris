@@ -188,6 +188,11 @@ Reset reinitializes the game state to start a new game.
 */
 func (g *Game) Reset() {
 	*g = *NewGame()
+
+	// initialze bodies
+	for _, body := range allBodies {
+		body.init()
+	}
 }
 
 /*
@@ -686,11 +691,6 @@ func main() {
 	log.SetFlags(log.Ltime)
 	ebiten.SetWindowSize(screenWidth, screenHeight)
 	ebiten.SetWindowTitle("TESTRis - Fixed Piece Spawning and Locking")
-
-	// initialze bodies
-	for _, body := range allBodies {
-		body.init()
-	}
 
 	game := NewGame()
 	if err := ebiten.RunGame(game); err != nil {
