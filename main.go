@@ -196,11 +196,6 @@ Reset reinitializes the game state to start a new game.
 */
 func (g *Game) Reset() {
 	*g = *NewGame()
-
-	// initialze bodies
-	for _, body := range allBodies {
-		body.init()
-	}
 }
 
 /*
@@ -232,33 +227,36 @@ func init() {
 		{image: mustLoadImage("assets/bomb11x11.png"), currentRotation: 0, size: Size{1, 1}, pieceType: "Bomb"},
 	}
 
+	// size of a piece
+	genericSize := allPieces[0].size
+
 	allBodies = []*Body{
 		&Body{ // bar shape, consists of 4 parts
 			name:  "longi",
 			score: 2000,
 			bodyPieces: []BodyPiece{ // defined as vertical bar
-				BodyPiece{pos: Pos{0, 0}, rotation: 0, pieceType: "Head"},
-				BodyPiece{pos: Pos{0, 3}, rotation: 0, pieceType: "Torso"},
-				BodyPiece{pos: Pos{0, 6}, rotation: 0, pieceType: "Torso"},
-				BodyPiece{pos: Pos{0, 9}, rotation: 0, pieceType: "Leg"},
+				BodyPiece{pos: Pos{0, 0},                 rotation: 0, pieceType: "Head"},
+				BodyPiece{pos: Pos{0, genericSize.h},     rotation: 0, pieceType: "Torso"},
+				BodyPiece{pos: Pos{0, 2 * genericSize.h}, rotation: 0, pieceType: "Torso"},
+				BodyPiece{pos: Pos{0, 3 * genericSize.h}, rotation: 0, pieceType: "Leg"},
 			},
 		},
 		&Body{ // bar shape, consists of 3 parts
 			name:  "fellow",
 			score: 1000,
 			bodyPieces: []BodyPiece{ // defined as vertical bar
-				BodyPiece{pos: Pos{0, 0}, rotation: 0, pieceType: "Head"},
-				BodyPiece{pos: Pos{0, 3}, rotation: 0, pieceType: "Torso"},
-				BodyPiece{pos: Pos{0, 6}, rotation: 0, pieceType: "Leg"},
+				BodyPiece{pos: Pos{0, 0},                 rotation: 0, pieceType: "Head"},
+				BodyPiece{pos: Pos{0, genericSize.h},     rotation: 0, pieceType: "Torso"},
+				BodyPiece{pos: Pos{0, 2 * genericSize.h}, rotation: 0, pieceType: "Leg"},
 			},
 		},
 		&Body{ // bar shape, consists of 3 parts
 			name:  "broken",
 			score: 3000,
 			bodyPieces: []BodyPiece{ // defined as L shape
-				BodyPiece{pos: Pos{0, 0}, rotation: 90, pieceType: "Head"},
-				BodyPiece{pos: Pos{3, 0}, rotation: 0, pieceType: "BrokenTorso"},
-				BodyPiece{pos: Pos{3, 3}, rotation: 0, pieceType: "Leg"},
+				BodyPiece{pos: Pos{0, 0},                         rotation: 90, pieceType: "Head"},
+				BodyPiece{pos: Pos{genericSize.h, 0},             rotation: 0, pieceType: "BrokenTorso"},
+				BodyPiece{pos: Pos{genericSize.h, genericSize.h}, rotation: 0, pieceType: "Leg"},
 			},
 		},
 	}
@@ -273,6 +271,11 @@ func NewGame() *Game {
 	theGrid := make([][]*Piece, gridSize.w)
 	for i := 0; i < gridSize.w; i++ {
 		theGrid[i] = make([]*Piece, gridSize.h)
+	}
+
+	// initialze bodies
+	for _, body := range allBodies {
+		body.init()
 	}
 
 	return &Game{
