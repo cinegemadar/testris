@@ -81,14 +81,6 @@ func (g *Game) dropPiece() {
 	g.spawnNewPiece()
 }
 
-// func (g *Game) movePiece(direction int, pressed *bool, key ebiten.Key) {
-// 	g.handleKeyPress(key, pressed, func() {
-// 		if g.canMove(g.activePiece, direction, 0) {
-// 			g.activePiece.pos.x += direction
-// 		}
-// 	})
-// }
-
 func mustLoadImage(path string) *ebiten.Image {
 	img, err := LoadImage(path)
 	if err != nil {
@@ -235,28 +227,28 @@ func init() {
 			name:  "longi",
 			score: 2000,
 			bodyPieces: []BodyPiece{ // defined as vertical bar
-				BodyPiece{pos: Pos{0, 0}, rotation: 0, pieceType: "Head"},
-				BodyPiece{pos: Pos{0, genericSize.h}, rotation: 0, pieceType: "Torso"},
-				BodyPiece{pos: Pos{0, 2 * genericSize.h}, rotation: 0, pieceType: "Torso"},
-				BodyPiece{pos: Pos{0, 3 * genericSize.h}, rotation: 0, pieceType: "Leg"},
+				{pos: Pos{0, 0}, rotation: 0, pieceType: "Head"},
+				{pos: Pos{0, genericSize.h}, rotation: 0, pieceType: "Torso"},
+				{pos: Pos{0, 2 * genericSize.h}, rotation: 0, pieceType: "Torso"},
+				{pos: Pos{0, 3 * genericSize.h}, rotation: 0, pieceType: "Leg"},
 			},
 		},
 		{ // bar shape, consists of 3 parts
 			name:  "fellow",
 			score: 1000,
 			bodyPieces: []BodyPiece{ // defined as vertical bar
-				BodyPiece{pos: Pos{0, 0}, rotation: 0, pieceType: "Head"},
-				BodyPiece{pos: Pos{0, genericSize.h}, rotation: 0, pieceType: "Torso"},
-				BodyPiece{pos: Pos{0, 2 * genericSize.h}, rotation: 0, pieceType: "Leg"},
+				{pos: Pos{0, 0}, rotation: 0, pieceType: "Head"},
+				{pos: Pos{0, genericSize.h}, rotation: 0, pieceType: "Torso"},
+				{pos: Pos{0, 2 * genericSize.h}, rotation: 0, pieceType: "Leg"},
 			},
 		},
 		{ // bar shape, consists of 3 parts
 			name:  "broken",
 			score: 3000,
 			bodyPieces: []BodyPiece{ // defined as L shape
-				BodyPiece{pos: Pos{0, 0}, rotation: 90, pieceType: "Head"},
-				BodyPiece{pos: Pos{genericSize.h, 0}, rotation: 0, pieceType: "BrokenTorso"},
-				BodyPiece{pos: Pos{genericSize.h, genericSize.h}, rotation: 0, pieceType: "Leg"},
+				{pos: Pos{0, 0}, rotation: 90, pieceType: "Head"},
+				{pos: Pos{genericSize.h, 0}, rotation: 0, pieceType: "BrokenTorso"},
+				{pos: Pos{genericSize.h, genericSize.h}, rotation: 0, pieceType: "Leg"},
 			},
 		},
 	}
