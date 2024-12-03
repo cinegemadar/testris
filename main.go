@@ -6,7 +6,6 @@ import (
 	"log"
 	"math/rand"
 	"os"
-	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -74,17 +73,17 @@ func (g *Game) handleKeyRelease(key ebiten.Key, pressed *bool, action func()) {
 dropPiece moves the active piece as far down as possible.
 */
 func (g *Game) dropPiece() {
-	for g.canMove(0, 1) {
+	for g.canMove(g.activePiece, 0, 1) {
 		g.activePiece.pos.y++
 	}
-	g.lockPiece()
-	g.joinAndScorePieces([]Pos{g.activePiece.pos})
+	g.lockPiece(g.activePiece)
+	g.joinAndScorePieces([]*Piece{g.activePiece})
 	g.spawnNewPiece()
 }
 
 func (g *Game) movePiece(direction int, pressed *bool, key ebiten.Key) {
 	g.handleKeyPress(key, pressed, func() {
-		if g.canMove(direction, 0) {
+		if g.canMove(g.activePiece, direction, 0) {
 			g.activePiece.pos.x += direction
 		}
 	})
@@ -180,7 +179,7 @@ func (g *Game) loadHighScore() int {
 
 type Game struct {
 	grid                [][]*Piece // Store piece references for each grid cell
-	lockedPieces        []*Piece   // Array to store locked pieces
+	lockedPieces        []*Piece   // Array to store locked pieces, sorted first by y then x coordinate
 	activePiece         *Piece
 	nextPiece           *Piece
 	score               int
@@ -197,6 +196,11 @@ Reset reinitializes the game state to start a new game.
 */
 func (g *Game) Reset() {
 	*g = *NewGame()
+
+	// initialze bodies
+	for _, body := range allBodies {
+		body.init()
+	}
 }
 
 /*
@@ -320,9 +324,9 @@ locking it in place if it cannot move further.
 */
 func (g *Game) drop() {
 	if g.frameCount%speed == 0 {
-		if !g.canMove(0, 1) {
-			g.lockPiece()
-			g.joinAndScorePieces([]Pos{g.activePiece.pos})
+		if !g.canMove(g.activePiece, 0, 1) {
+			g.lockPiece(g.activePiece)
+			g.joinAndScorePieces([]*Piece{g.activePiece})
 			g.spawnNewPiece()
 		} else {
 			g.activePiece.pos.y++
@@ -369,7 +373,7 @@ Parameters:
 */
 func (g *Game) movePieceInDirection(direction int, key ebiten.Key, pressed *bool) {
 	g.handleKeyPress(key, pressed, func() {
-		if g.canMove(direction, 0) {
+		if g.canMove(g.activePiece, direction, 0) {
 			g.activePiece.pos.x += direction
 		}
 	})
@@ -534,15 +538,16 @@ Parameters:
 Returns:
 - True if the piece can move to the new position, otherwise false.
 */
-func (g *Game) canMove(dx, dy int) bool {
-	newPos := Pos{g.activePiece.pos.x + dx, g.activePiece.pos.y + dy}
+func (g *Game) canMove(piece *Piece, dx, dy int) bool {
+	newPos := Pos{piece.pos.x + dx, piece.pos.y + dy}
+	size := rotateSize(piece.size, piece.currentRotation)
 
-	if !isWithinBounds(newPos, g.activePiece.size, Pos{1, 1}, Pos{gridSize.w - 1, gridSize.h - 1}) {
+	if !isWithinBounds(newPos, size, Pos{1, 1}, Pos{gridSize.w - 1, gridSize.h - 1}) {
 		return false
 	}
 
 	for _, piece := range g.lockedPieces {
-		if piece.isColliding(newPos, g.activePiece.size) {
+		if piece.isColliding(newPos, size) {
 			return false
 		}
 	}
@@ -554,12 +559,43 @@ func (g *Game) canMove(dx, dy int) bool {
 lockPiece locks the active piece in its current position on the grid,
 adding it to the list of locked pieces.
 */
-func (g *Game) lockPiece() {
-	lockedPiece := g.activePiece
-	g.lockedPieces = append(g.lockedPieces, lockedPiece)
+func (g *Game) lockPiece(piece *Piece) {
+	// find in the sorted locked list
+	idx := sort.Search(len(g.lockedPieces), func(i int) bool {
+		return piece.pos.y < g.lockedPieces[i].pos.y || (piece.pos.y == g.lockedPieces[i].pos.y && piece.pos.x <= g.lockedPieces[i].pos.x)
+		})
+
+	if idx < len(g.lockedPieces) && g.lockedPieces[idx] == piece {
+		log.Fatalf("The piece %v is not expected in the locked list!", piece)
+	}
+
+	// insert to sorted list
+	g.lockedPieces = append(g.lockedPieces, nil)
+	copy(g.lockedPieces[idx + 1:], g.lockedPieces[idx:])
+	g.lockedPieces[idx] = piece
 
 	// add references to the locked piece in the grid
-	g.changePieceInGrid(lockedPiece, true)
+	g.changePieceInGrid(piece, true)
+}
+
+/*
+Remove piece from the locked list and grid matrix.
+*/
+func (g *Game) unlockPiece(lockedPiece *Piece) {
+	// find in the sorted locked list
+	idx := sort.Search(len(g.lockedPieces), func(i int) bool {
+		return lockedPiece.pos.y < g.lockedPieces[i].pos.y || (lockedPiece.pos.y == g.lockedPieces[i].pos.y && lockedPiece.pos.x <= g.lockedPieces[i].pos.x)
+		})
+
+	if idx == len(g.lockedPieces) || g.lockedPieces[idx] != lockedPiece {
+		log.Fatalf("The piece %v is expected in the locked list!", lockedPiece)
+	}
+
+	// remove from sorted list
+	g.lockedPieces = append(g.lockedPieces[:idx], g.lockedPieces[idx + 1:]...)
+		
+	// remove references to the locked piece in the grid
+	g.changePieceInGrid(lockedPiece, false)
 }
 
 /*
@@ -583,7 +619,7 @@ spawnNewPiece make the next piece to be the active piece and
 creates the next active piece from the available pieces.
 */
 func (g *Game) spawnNewPiece() {
-	if g.activePiece.pos.y == 0 && !g.canMove(0, 1) {
+	if g.activePiece.pos.y == 0 && !g.canMove(g.activePiece, 0, 1) {
 		g.endGame()
 		return
 	}
@@ -592,45 +628,68 @@ func (g *Game) spawnNewPiece() {
 	g.nextPiece = generatePiece()
 }
 
-func (g *Game) joinAndScorePieces(positions []Pos) {
-	log.Printf("joinAndScorePieces(pos: %v)", positions)
+func (g *Game) joinAndScorePieces(pieces []*Piece) {
+	log.Printf("joinAndScorePieces(pieces: %v)", pieces)
 
-	for 0 < len(positions) {
-		pos := positions[0]
-		positions = positions[1:]
-
-		piece := g.grid[pos.x][pos.y]
+	joinedCnt := 0
+	for 0 < len(pieces) {
+		piece := pieces[0]
+		pieces = pieces[1:]
 
 		if piece != nil {
 			for _, body := range allBodies {
 				posList := body.matchAtLockedPiece(g, piece)
 
-				g.score += body.score
-				g.removePieces(posList)
-
-				// todo: compact pieces
+				if posList != nil {
+					g.score += body.score
+					g.removePieces(posList)
+					joinedCnt++
+				}
 			}
+		}
+	}
+
+	if 0 < joinedCnt {
+		pieces = g.compactGrid()
+
+		// if any pieces has fallen => recurse
+		if pieces != nil {
+			g.joinAndScorePieces(pieces)
 		}
 	}
 }
 
 func (g *Game) removePieces(positions []Pos) {
-	log.Printf("removePieces(pos: %v)", positions)
 	for _, pos := range positions {
 		piece := g.grid[pos.x][pos.y]
-		// remove references to the locked piece in the grid
-		g.changePieceInGrid(piece, false)
+		g.unlockPiece(piece)
+	}
+}
 
-		idx := slices.Index(g.lockedPieces, piece)
-		if idx < 0 {
-			log.Fatal("Piece is not found in grid!")
-		} else {
-			// remove item
-			newLen := len(g.lockedPieces) - 1
-			g.lockedPieces[idx] = g.lockedPieces[newLen]
-			g.lockedPieces = g.lockedPieces[:newLen]
+func (g *Game) compactGrid() []*Piece {
+	fallenPieces := make([]*Piece, 0)
+
+	for i := len(g.lockedPieces) - 1; 0 <= i; i-- {
+		piece := g.lockedPieces[i]
+
+		// check if piece can fall
+		size := rotateSize(piece.size, piece.currentRotation)
+		dy := size.h - 1
+		for g.canMove(piece, 0, dy + 1) {
+			dy++
+		}
+
+		if size.h <= dy {
+			log.Printf("Moving piece '%s'@%v down by %d", piece.pieceType, piece.pos, dy)
+			g.unlockPiece(piece)
+			piece.pos.y += dy
+			g.lockPiece(piece)
+			
+			fallenPieces = append(fallenPieces, piece)
 		}
 	}
+	
+	return fallenPieces
 }
 
 /*
@@ -650,14 +709,9 @@ func generatePiece() *Piece {
 main initializes the game window and starts the game loop.
 */
 func main() {
-	log.SetFlags(log.Ltime | log.Lshortfile)
+	log.SetFlags(log.Ltime)
 	ebiten.SetWindowSize(screenWidth, screenHeight)
 	ebiten.SetWindowTitle("TESTRis - Fixed Piece Spawning and Locking")
-
-	// initialze bodies
-	for _, body := range allBodies {
-		body.init()
-	}
 
 	game := NewGame()
 	if err := ebiten.RunGame(game); err != nil {

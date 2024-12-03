@@ -3,6 +3,8 @@ package main
 import (
 	"os"
 	"testing"
+	"slices"
+	"strings"
 
 	"github.com/hajimehoshi/ebiten/v2"
 )
@@ -119,7 +121,7 @@ func TestGameLayout(t *testing.T) {
 // TestGameCanMove tests the canMove method of Game.
 func TestGameCanMove(t *testing.T) {
 	game := NewGame()
-	if !game.canMove(0, 1) {
+	if !game.canMove(game.activePiece, 0, 1) {
 		t.Error("Expected piece to be able to move down")
 	}
 }
@@ -129,7 +131,7 @@ func TestGameLockPiece(t *testing.T) {
 	game := NewGame()
 	piece := game.activePiece
 
-	game.lockPiece()
+	game.lockPiece(game.activePiece)
 	if len(game.lockedPieces) != 1 {
 		t.Errorf("Expected 1 locked piece, got %d", len(game.lockedPieces))
 	}
@@ -146,4 +148,168 @@ func TestGameSpawnNewPiece(t *testing.T) {
 	if game.activePiece == nil {
 		t.Error("Expected new active piece, got nil")
 	}
+}
+
+func fillGrid(g *Game, gridRows []string) [][]*Piece {
+	headIdx := slices.IndexFunc(allPieces, func(p Piece) bool { return p.pieceType == "Head" })
+	torsoIdx := slices.IndexFunc(allPieces, func(p Piece) bool { return p.pieceType == "Torso" })
+	legIdx := slices.IndexFunc(allPieces, func(p Piece) bool { return p.pieceType == "Leg" })
+	bombIdx := slices.IndexFunc(allPieces, func(p Piece) bool { return p.pieceType == "Bomb" })
+
+	s := allPieces[headIdx].size.w // for simplicity consider all pieces have the same w+h size
+	bottom := gridSize.h - 1
+
+	var piecesMatrix [][]*Piece
+
+	piecePos := Pos{1, bottom - len(gridRows) * s}
+	for _, rowDesc := range gridRows {
+		var piecesRow []*Piece
+
+		piecePos.x = 1
+		pieceDescList := strings.Split(rowDesc, " ")
+		for _, pieceDesc := range pieceDescList {
+			var piece Piece
+
+			if pieceDesc == "" {
+				continue
+			}
+			
+			if pieceDesc != "_" {
+				piece = Piece{}
+				switch t := pieceDesc[1]; t {
+					case 'H': piece = allPieces[headIdx]
+					case 'T': piece = allPieces[torsoIdx]
+					case 'L': piece = allPieces[legIdx]
+					case 'B': piece = allPieces[bombIdx]
+				}
+
+				switch r := pieceDesc[0]; r {
+					case '^':  piece.currentRotation = 0
+					case '<': piece.currentRotation = 90
+					case 'v': piece.currentRotation = 180
+					default: piece.currentRotation = 270
+				}
+
+				piece.pos = piecePos
+
+				g.lockPiece(&piece)
+			}
+
+			piecesRow = append(piecesRow, &piece)
+			piecePos.x += s
+		}
+
+		piecesMatrix = append(piecesMatrix, piecesRow)
+		piecePos.y += s
+	}
+
+	return piecesMatrix
+}
+
+// TestGameJoinAndScorePieces tests the lockPieces and unlockPieces methods of Game.
+func TestGameLockUnlockPieces(t *testing.T) {
+	game := NewGame()
+
+	gridDesc1 := []string {
+	// 0   1   2
+		"_   _   _",    // 0
+		">L  >T  <H", } // 1
+	piecesMat1 := fillGrid(game, gridDesc1);
+
+	gridDesc2 := []string {
+	// 0   1   2   3   4   5   6
+		"_   >H  ^T",   // 0
+		"_   _   _", }  // 1
+	piecesMat2 := fillGrid(game, gridDesc2);
+
+	if len(game.lockedPieces) != 5 {
+		t.Errorf("Expected 5 locked pieces. Got %d instead.", len(game.lockedPieces))
+	}
+
+	if game.lockedPieces[0] != piecesMat2[0][1] { t.Errorf("Expected 1st locked piece d %v. Got %v instead.", piecesMat2[0][1], game.lockedPieces[0]) }
+	if game.lockedPieces[1] != piecesMat2[0][2] { t.Errorf("Expected 2nd locked piece d %v. Got %v instead.", piecesMat2[0][2], game.lockedPieces[1]) }
+	if game.lockedPieces[2] != piecesMat1[1][0] { t.Errorf("Expected 3rd locked piece d %v. Got %v instead.", piecesMat1[0][0], game.lockedPieces[2]) }
+	if game.lockedPieces[3] != piecesMat1[1][1] { t.Errorf("Expected 4th locked piece d %v. Got %v instead.", piecesMat1[0][1], game.lockedPieces[3]) }
+	if game.lockedPieces[4] != piecesMat1[1][2] { t.Errorf("Expected 5th locked piece d %v. Got %v instead.", piecesMat1[0][2], game.lockedPieces[4]) }
+
+	// unlock (remove) 2 pieces
+	p1 := piecesMat2[0][2]
+	p2 := piecesMat1[1][1]
+	game.unlockPiece(p1)
+	game.unlockPiece(p2)
+
+	if len(game.lockedPieces) != 3 {
+		t.Errorf("Expected 3 locked pieces. Got %d instead.", len(game.lockedPieces))
+	}
+
+	if game.lockedPieces[0] != piecesMat2[0][1] { t.Errorf("Expected 1st locked piece d %v. Got %v instead.", piecesMat2[0][1], game.lockedPieces[0]) }
+	if game.lockedPieces[1] != piecesMat1[1][0] { t.Errorf("Expected 2nd locked piece d %v. Got %v instead.", piecesMat1[0][0], game.lockedPieces[1]) }
+	if game.lockedPieces[2] != piecesMat1[1][2] { t.Errorf("Expected 3rd locked piece d %v. Got %v instead.", piecesMat1[0][2], game.lockedPieces[2]) }
+
+	// swap positions of two pieces
+	p1.pos, p2.pos = p2.pos, p1.pos
+
+	// lock (add) the 2 pieces
+	game.lockPiece(p1)
+	game.lockPiece(p2)
+
+	if len(game.lockedPieces) != 5 {
+		t.Errorf("Expected 5 locked pieces. Got %d instead.", len(game.lockedPieces))
+	}
+
+	if game.lockedPieces[0] != piecesMat2[0][1] { t.Errorf("Expected 1st locked piece d %v. Got %v instead.", piecesMat2[0][1], game.lockedPieces[0]) }
+	if game.lockedPieces[1] != p2               { t.Errorf("Expected 2nd locked piece d %v. Got %v instead.", p2, game.lockedPieces[1]) }
+	if game.lockedPieces[2] != piecesMat1[1][0] { t.Errorf("Expected 3rd locked piece d %v. Got %v instead.", piecesMat1[0][0], game.lockedPieces[2]) }
+	if game.lockedPieces[3] != p1               { t.Errorf("Expected 4th locked piece d %v. Got %v instead.", p1, game.lockedPieces[3]) }
+	if game.lockedPieces[4] != piecesMat1[1][2] { t.Errorf("Expected 5th locked piece d %v. Got %v instead.", piecesMat1[0][2], game.lockedPieces[4]) }
+}
+
+// TestGameJoinAndScorePieces tests the joinAndScorePieces method of Game.
+func TestGameJoinAndScorePieces(t *testing.T) {
+	game := NewGame()
+	fellow := allBodies[ slices.IndexFunc(allBodies, func(b *Body) bool { return b.name == "fellow" }) ]
+
+	// grid status
+	gridDesc := []string {
+	// 0   1   2   3   4   5   6
+		"_   _   ^T  _   <H",           // 0
+		"_   >H  >H  _   vT  <T  <L",   // 1
+		">L  >T  <H  <T  <L  ^L  vH", } // 2
+	piecesMat := fillGrid(game, gridDesc);
+
+	origScore := game.score
+	game.joinAndScorePieces([]*Piece{ piecesMat[2][3] }) // <T in the bottom row
+
+	// 1 body joins and disappears:
+	//          ^T      <H
+	//      >H  >H      vT  <T  <L
+	//  >L  >T              ^L  vH
+
+	// pieces fallen:
+	//
+	//      >H  ^T      <H  <T  <L
+	//  >L  >T  >H      vT  ^L  vH
+	
+	// 2 more bodies join and disappear:
+	//
+	//      >H  ^T
+	//                  vT  ^L  vH
+
+	// pieces fallen:
+	//
+	//      >H  ^T      vT  ^L  vH
+
+	if origScore + 3 * fellow.score != game.score {
+		t.Errorf("Expected score (%d) is %d", game.score, origScore + 2 * fellow.score)
+	}
+
+	if len(game.lockedPieces) != 5 {
+		t.Errorf("Expected 5 locked pieces. Got %d instead.", len(game.lockedPieces))
+	}
+
+	if game.lockedPieces[0] != piecesMat[1][1] { t.Errorf("Expected 1st locked piece d %v. Got %v instead.", piecesMat[1][1], game.lockedPieces[0]) }
+	if game.lockedPieces[1] != piecesMat[0][2] { t.Errorf("Expected 2nd locked piece d %v. Got %v instead.", piecesMat[0][2], game.lockedPieces[1]) }
+	if game.lockedPieces[2] != piecesMat[1][4] { t.Errorf("Expected 3rd locked piece d %v. Got %v instead.", piecesMat[1][4], game.lockedPieces[2]) }
+	if game.lockedPieces[3] != piecesMat[2][5] { t.Errorf("Expected 4th locked piece d %v. Got %v instead.", piecesMat[2][5], game.lockedPieces[3]) }
+	if game.lockedPieces[4] != piecesMat[2][6] { t.Errorf("Expected 5th locked piece d %v. Got %v instead.", piecesMat[2][6], game.lockedPieces[4]) }
 }

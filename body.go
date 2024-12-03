@@ -73,38 +73,35 @@ func (body *Body) matchBodyPieceAtLockedPiece(g *Game, bodyPiece *BodyPiece, loc
 
 	matchedPosList := make([]Pos, 0)
 	for _, bp := range body.bodyPieces {
-//		if bodyPiece == &bp { contiunue } // no need to verify the 
-
 		relPosBodyCs := subPos(bp.pos, bodyCsOrigin)
 		relPosGridCs := rotatePos(relPosBodyCs, bodyCsRotation)
 		posGridCs := addPos(lockedPiece.pos, relPosGridCs)
-		log.Printf("   bp.pos:%v, relPosBodyCs:%v, relPosGridCs:%v, posGridCs:%v", bp.pos, relPosBodyCs, relPosGridCs, posGridCs)
 
 		if !isOverlap(posGridCs, Size{1, 1}, Pos{0, 0}, gridSize) {
-			log.Printf("   Checking '%s' at %v... Outside the grid.", bp.pieceType, posGridCs)
+			log.Printf("   Checking '%s'@%v... Outside the grid.", bp.pieceType, posGridCs)
 			return nil
 		}
 
 		piece := g.grid[posGridCs.x][posGridCs.y]
 		if piece == nil {
-			log.Printf("  Checking '%s' at %v... Empty grid location.", bp.pieceType, posGridCs)
+			log.Printf("  Checking '%s'@%v... Empty grid location.", bp.pieceType, posGridCs)
 			return nil
 		}
 		if piece.pieceType != bp.pieceType {
-			log.Printf("  Checking '%s' at %v... Type %s does not match.", bp.pieceType, posGridCs, piece.pieceType)
+			log.Printf("  Checking '%s'@%v... Type %s does not match.", bp.pieceType, posGridCs, piece.pieceType)
 			return nil
 		}
 
 		if piece.pos != posGridCs {
-			log.Printf("  Checking '%s' at %v... Position %v is slightly off", bp.pieceType, posGridCs, piece.pos)
+			log.Printf("  Checking '%s'@%v... Position %v is slightly off", bp.pieceType, posGridCs, piece.pos)
 			return nil
 		}
 		if !angleDegEq(piece.currentRotation, bp.rotation - bodyCsRotation) {
-			log.Printf("  Checking '%s' at %v... Piece orientation %d mismatches to expected %d.", bp.pieceType, posGridCs, piece.currentRotation, bp.rotation + bodyCsRotation)
+			log.Printf("  Checking '%s'@%v... Piece orientation %d mismatches to expected %d.", bp.pieceType, posGridCs, piece.currentRotation, bp.rotation + bodyCsRotation)
 			return nil
 		}
 
-		log.Printf("  Checking '%s' at %v... Body piece matches", bp.pieceType, posGridCs)
+		log.Printf("  Checking '%s'@%v... Body piece matches", bp.pieceType, posGridCs)
 		matchedPosList = append(matchedPosList, posGridCs)
 	}
 
