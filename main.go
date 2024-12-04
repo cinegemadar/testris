@@ -197,6 +197,7 @@ type Game struct {
 	moveLeftKeyPressed  bool
 	moveRightKeyPressed bool
 	dropKeyPressed      bool
+	speedupKeyPressed   bool
 	speedLevelIdx       int // index in speedLevels
 }
 
@@ -395,6 +396,18 @@ rotate handles the rotation of the active piece when the space key is pressed.
 func (g *Game) rotate() {
 	g.handleKeyPress(ebiten.KeySpace, &g.rotateKeyPressed, func() {
 		g.activePiece.currentRotation = (g.activePiece.currentRotation + 90) % 360
+	})
+}
+
+/*
+speedup handles the speding up when the "increase speed" key is pressed.
+*/
+func (g *Game) speedup() {
+	g.handleKeyPress(ebiten.KeyS, &g.speedupKeyPressed, func() {
+		if g.speedLevelIdx + 1 < len(speedLevels) {
+			g.speedLevelIdx++
+			log.Printf("speed level increased manually to %d at %f sec", g.speedLevelIdx, g.gameTimeSec)
+		}
 	})
 }
 
