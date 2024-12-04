@@ -222,7 +222,7 @@ func init() {
 	allPieces = []Piece{
 		{image: mustLoadImage("assets/head10x10.png"), currentRotation: 0, size: Size{1, 1}, pieceType: "Head"},
 		{image: mustLoadImage("assets/torso10x10.png"), currentRotation: 0, size: Size{1, 1}, pieceType: "Torso"},
-		{image: mustLoadImage("assets/broken_torso10x10.png"), currentRotation: 0, size: Size{1, 1}, pieceType: "BrokenTorso"},
+		{image: mustLoadImage("assets/right_brk_torso10x10.png"), currentRotation: 0, size: Size{1, 1}, pieceType: "RightBrkTorso"},
 		{image: mustLoadImage("assets/leg10x10.png"), currentRotation: 0, size: Size{1, 1}, pieceType: "Leg"},
 		{image: mustLoadImage("assets/bomb11x11.png"), currentRotation: 0, size: Size{1, 1}, pieceType: "Bomb"},
 	}
@@ -242,7 +242,7 @@ func init() {
 			},
 		},
 		&Body{ // bar shape, consists of 3 parts
-			name:  "fellow",
+			name:  "Fellow",
 			score: 1000,
 			bodyPieces: []BodyPiece{ // defined as vertical bar
 				BodyPiece{pos: Pos{0, 0},                 rotation: 0, pieceType: "Head"},
@@ -251,11 +251,11 @@ func init() {
 			},
 		},
 		&Body{ // bar shape, consists of 3 parts
-			name:  "broken",
+			name:  "Right broken",
 			score: 3000,
 			bodyPieces: []BodyPiece{ // defined as L shape
 				BodyPiece{pos: Pos{0, 0},                         rotation: 90, pieceType: "Head"},
-				BodyPiece{pos: Pos{genericSize.h, 0},             rotation: 0, pieceType: "BrokenTorso"},
+				BodyPiece{pos: Pos{genericSize.h, 0},             rotation: 0, pieceType: "RightBrkTorso"},
 				BodyPiece{pos: Pos{genericSize.h, genericSize.h}, rotation: 0, pieceType: "Leg"},
 			},
 		},
