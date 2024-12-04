@@ -267,7 +267,7 @@ func TestGameLockUnlockPieces(t *testing.T) {
 // TestGameJoinAndScorePieces tests the joinAndScorePieces method of Game.
 func TestGameJoinAndScorePieces(t *testing.T) {
 	game := NewGame()
-	fellow := allBodies[ slices.IndexFunc(allBodies, func(b *Body) bool { return b.name == "fellow" }) ]
+	fellow := allBodies[ slices.IndexFunc(allBodies, func(b *Body) bool { return b.name == "Fellow" }) ]
 
 	// grid status
 	gridDesc := []string {
