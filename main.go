@@ -6,6 +6,7 @@ import (
 	"log"
 	"math/rand"
 	"os"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -50,6 +51,10 @@ func (piece *Piece) getScale() (float64, float64) {
 	return scale * float64(piece.size.w) / float64(piece.image.Bounds().Max.X), scale * float64(piece.size.h) / float64(piece.image.Bounds().Max.Y)
 }
 
+func (piece *Piece) isBomb() bool {
+	return piece.pieceType == "Bomb"
+}
+
 /*
 handleKeyRelease centralizes the handling of key releases to trigger actions.
 
@@ -76,9 +81,7 @@ func (g *Game) dropPiece() {
 	for g.canMove(g.activePiece, 0, 1) {
 		g.activePiece.pos.y++
 	}
-	g.lockPiece(g.activePiece)
-	g.joinAndScorePieces([]*Piece{g.activePiece})
-	g.spawnNewPiece()
+	g.handleActivePieceLanded()
 }
 
 func (g *Game) movePiece(direction int, pressed *bool, key ebiten.Key) {
@@ -154,6 +157,7 @@ endGame handles the end of the game, saving the score and checking for a new hig
 */
 func (g *Game) endGame() {
 	g.gameOver = true
+	log.Printf("Game ended. Spawn stat: %v", g.spawnStat)
 	// Save the current score to the highscore file
 	g.saveScore(g.score)
 
@@ -189,12 +193,14 @@ type Game struct {
 	moveLeftKeyPressed  bool
 	moveRightKeyPressed bool
 	dropKeyPressed      bool
+	spawnStat           map[string]int // game statistics: number of spawned pieces per piece type
 }
 
 /*
 Reset reinitializes the game state to start a new game.
 */
 func (g *Game) Reset() {
+	log.Printf("Game reset. Spawn stat: %v", g.spawnStat)
 	*g = *NewGame()
 }
 
@@ -278,11 +284,13 @@ func NewGame() *Game {
 		body.init()
 	}
 
-	return &Game{
-		grid:        theGrid,
-		activePiece: generatePiece(),
-		nextPiece:   generatePiece(),
-	}
+	game := &Game{}
+	game.grid =        theGrid
+	game.spawnStat =   make(map[string]int)
+	game.activePiece = game.generatePiece()
+	game.nextPiece =   game.generatePiece()
+	
+	return game
 }
 
 /*
@@ -328,9 +336,7 @@ locking it in place if it cannot move further.
 func (g *Game) drop() {
 	if g.frameCount%speed == 0 {
 		if !g.canMove(g.activePiece, 0, 1) {
-			g.lockPiece(g.activePiece)
-			g.joinAndScorePieces([]*Piece{g.activePiece})
-			g.spawnNewPiece()
+			g.handleActivePieceLanded()
 		} else {
 			g.activePiece.pos.y++
 		}
@@ -361,7 +367,9 @@ rotate handles the rotation of the active piece when the space key is pressed.
 */
 func (g *Game) rotate() {
 	g.handleKeyPress(ebiten.KeySpace, &g.rotateKeyPressed, func() {
-		g.activePiece.currentRotation = (g.activePiece.currentRotation + 90) % 360
+		if !g.activePiece.isBomb() { // do not rotate bomb (it is symmetric and has a visual sparkle)
+			g.activePiece.currentRotation = (g.activePiece.currentRotation + 90) % 360
+		}
 	})
 }
 
@@ -559,6 +567,32 @@ func (g *Game) canMove(piece *Piece, dx, dy int) bool {
 }
 
 /*
+Call this when the active piece is landed. If does the following:
+If the active piece is a bomb: destroys piece below.
+Otherwise locks the piece, join and score bodies, then spawn a new piece.
+Spawn a new piece.
+*/
+func (g *Game) handleActivePieceLanded() {
+	if g.activePiece.isBomb() {
+		below := addPos(g.activePiece.pos, Pos{0, 1})
+		// is the location below the bomb within the grid?
+		if isWithinBounds(below, Size{1, 1}, Pos{1, 1}, Pos{gridSize.w - 1, gridSize.h - 1}) {
+			// remove (unlock) each piece below the bomb
+			for i := 0; i < g.activePiece.size.w; i++ {
+				piece := g.grid[below.x + i][below.y]
+				if piece != nil {
+					g.unlockPiece(piece)
+				}
+			}
+		}
+	} else {
+		g.lockPiece(g.activePiece)
+		g.joinAndScorePieces([]*Piece{g.activePiece})
+	}
+	g.spawnNewPiece()
+}
+
+/*
 lockPiece locks the active piece in its current position on the grid,
 adding it to the list of locked pieces.
 */
@@ -628,7 +662,7 @@ func (g *Game) spawnNewPiece() {
 	}
 
 	g.activePiece = g.nextPiece
-	g.nextPiece = generatePiece()
+	g.nextPiece = g.generatePiece()
 }
 
 func (g *Game) joinAndScorePieces(pieces []*Piece) {
@@ -699,11 +733,30 @@ func (g *Game) compactGrid() []*Piece {
 generatePiece creates a new piece from the available pieces and
 positions it at the top of the grid.
 */
-func generatePiece() *Piece {
-	newPiece := allPieces[rand.Intn(len(allPieces))]
+func (g *Game) generatePiece() *Piece {
+	bombIdx := slices.IndexFunc(allPieces, func(p Piece) bool { return p.isBomb() })
+	bombRelProb := float32(0.75) // relative probability to ordinary pieces
+
+	// generate random index of the new piece. take care that the bomb has different probability than ordinary pieces
+	newPieceIdx := rand.Intn(len(allPieces))
+	if newPieceIdx == bombIdx && bombRelProb < rand.Float32() {
+		newPieceIdx = rand.Intn(len(allPieces) - 1)
+		if newPieceIdx == bombIdx {
+			newPieceIdx++
+		}
+	}
+
+	newPiece := allPieces[newPieceIdx]
 	newPiece.pos.x = gridSize.w / 2
 	newPiece.pos.y = 0
-	newPiece.currentRotation = rand.Intn(4) * 90
+	if !newPiece.isBomb() { // do not rotate bomb (it is symmetric and has a visual sparkle)
+		newPiece.currentRotation = rand.Intn(4) * 90
+	}
+
+	// update statistics
+	val, _ := g.spawnStat[newPiece.pieceType]
+	val++
+	g.spawnStat[newPiece.pieceType] = val
 
 	return &newPiece
 }
