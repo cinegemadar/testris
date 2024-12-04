@@ -21,12 +21,18 @@ const (
 	screenWidth  = 800
 	screenHeight = 600
 	sidebarWidth = 140
-	speed        = 25
+	ticksPerSec  = 60 // Update() is called with this frequency
 	scale        = 30 // Unified scale factor for cells and sprites
 )
 
+type SpeedLevel struct {
+	ticksPerDrop     int
+	nextLevelTimeSec int
+}
+
 var (
 	gridSize         = Size{18, 18}
+	speedLevels      = []SpeedLevel{{30, 30}, {26, 60}, {22, 90}, {19, 120}, {16, 150}, {13, 180}, {11, 210}, {9, 240}, {7, 270}, {6, 300}}
 	borderColor      = color.RGBA{R: 70, G: 255, B: 255, A: 255}
 	boundingBoxColor = color.RGBA{R: 255, G: 255, B: 0, A: 255}
 	sidebarColor     = color.RGBA{R: 130, G: 130, B: 130, A: 255}
@@ -184,11 +190,14 @@ type Game struct {
 	nextPiece           *Piece
 	score               int
 	frameCount          int
+	dropFrameCount      int // counts frames. used for determining time to drop the piece
+	gameTimeSec         float32
 	gameOver            bool
 	rotateKeyPressed    bool
 	moveLeftKeyPressed  bool
 	moveRightKeyPressed bool
 	dropKeyPressed      bool
+	speedLevelIdx       int // index in speedLevels
 }
 
 /*
@@ -294,6 +303,7 @@ Returns:
 */
 func (g *Game) Update() error {
 	g.frameCount++
+	g.gameTimeSec += 1 / float32(ticksPerSec)
 
 	g.restart() // Always check for restart
 
@@ -301,7 +311,10 @@ func (g *Game) Update() error {
 		g.movePieceInDirection(-1, ebiten.KeyArrowLeft, &g.moveLeftKeyPressed)
 		g.movePieceInDirection(1, ebiten.KeyArrowRight, &g.moveRightKeyPressed)
 		g.rotate()
-		g.drop()
+		g.speedup()
+		if g.checkTimeToDrop() {
+			g.drop()
+		}
 		g.handleKeyRelease(ebiten.KeyEnter, &g.dropKeyPressed, g.dropPiece)
 	}
 
@@ -322,18 +335,38 @@ func (g *Game) restart() {
 }
 
 /*
-drop moves the active piece down the grid at a regular interval,
+determines if it is time to drop. increases speed if it is time to go to the next speed level.
+returns if it is time to drop.
+*/
+func (g *Game) checkTimeToDrop() bool {
+	g.dropFrameCount++
+
+	speedLevel := speedLevels[g.speedLevelIdx]
+	if speedLevel.ticksPerDrop <= g.dropFrameCount {
+		g.dropFrameCount = 0
+
+		if g.speedLevelIdx + 1 < len(speedLevels) && float32(speedLevel.nextLevelTimeSec) < g.gameTimeSec {
+			g.speedLevelIdx++
+			log.Printf("speed level increased to %d at %d frames, %f sec", g.speedLevelIdx, g.frameCount, g.gameTimeSec)
+		}
+
+		return true
+	} else {
+		return false
+	}
+}
+
+/*
+drop moves the active piece down the grid,
 locking it in place if it cannot move further.
 */
 func (g *Game) drop() {
-	if g.frameCount%speed == 0 {
-		if !g.canMove(g.activePiece, 0, 1) {
-			g.lockPiece(g.activePiece)
-			g.joinAndScorePieces([]*Piece{g.activePiece})
-			g.spawnNewPiece()
-		} else {
-			g.activePiece.pos.y++
-		}
+	if !g.canMove(g.activePiece, 0, 1) {
+		g.lockPiece(g.activePiece)
+		g.joinAndScorePieces([]*Piece{g.activePiece})
+		g.spawnNewPiece()
+	} else {
+		g.activePiece.pos.y++
 	}
 }
 
