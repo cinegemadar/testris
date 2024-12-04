@@ -251,6 +251,14 @@ func init() {
 				BodyPiece{pos: Pos{0, 2 * genericSize.h}, rotation: 0, pieceType: "Leg"},
 			},
 		},
+		&Body{ // bar shape, consists of 2 parts
+			name:  "Asshead",
+			score: 500,
+			bodyPieces: []BodyPiece{ // defined as vertical bar
+				BodyPiece{pos: Pos{0, 0},             rotation: 0, pieceType: "Head"},
+				BodyPiece{pos: Pos{0, genericSize.h}, rotation: 0, pieceType: "Leg"},
+			},
+		},
 		&Body{ // bar shape, consists of 3 parts
 			name:  "Right broken",
 			score: 3000,
