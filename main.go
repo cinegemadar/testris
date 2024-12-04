@@ -232,16 +232,6 @@ func init() {
 	genericSize := allPieces[0].size
 
 	allBodies = []*Body{
-		&Body{ // bar shape, consists of 4 parts
-			name:  "longi",
-			score: 2000,
-			bodyPieces: []BodyPiece{ // defined as vertical bar
-				BodyPiece{pos: Pos{0, 0},                 rotation: 0, pieceType: "Head"},
-				BodyPiece{pos: Pos{0, genericSize.h},     rotation: 0, pieceType: "Torso"},
-				BodyPiece{pos: Pos{0, 2 * genericSize.h}, rotation: 0, pieceType: "Torso"},
-				BodyPiece{pos: Pos{0, 3 * genericSize.h}, rotation: 0, pieceType: "Leg"},
-			},
-		},
 		&Body{ // bar shape, consists of 3 parts
 			name:  "Fellow",
 			score: 1000,
