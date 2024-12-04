@@ -223,6 +223,7 @@ func init() {
 		{image: mustLoadImage("assets/head10x10.png"), currentRotation: 0, size: Size{1, 1}, pieceType: "Head"},
 		{image: mustLoadImage("assets/torso10x10.png"), currentRotation: 0, size: Size{1, 1}, pieceType: "Torso"},
 		{image: mustLoadImage("assets/right_brk_torso10x10.png"), currentRotation: 0, size: Size{1, 1}, pieceType: "RightBrkTorso"},
+		{image: mustLoadImage("assets/left_brk_torso10x10.png"), currentRotation: 0, size: Size{1, 1}, pieceType: "LeftBrkTorso"},
 		{image: mustLoadImage("assets/leg10x10.png"), currentRotation: 0, size: Size{1, 1}, pieceType: "Leg"},
 		{image: mustLoadImage("assets/bomb11x11.png"), currentRotation: 0, size: Size{1, 1}, pieceType: "Bomb"},
 	}
@@ -257,6 +258,15 @@ func init() {
 				BodyPiece{pos: Pos{0, 0},                         rotation: 90, pieceType: "Head"},
 				BodyPiece{pos: Pos{genericSize.h, 0},             rotation: 0, pieceType: "RightBrkTorso"},
 				BodyPiece{pos: Pos{genericSize.h, genericSize.h}, rotation: 0, pieceType: "Leg"},
+			},
+		},
+		&Body{ // bar shape, consists of 3 parts
+			name:  "Left broken",
+			score: 3000,
+			bodyPieces: []BodyPiece{ // defined as L shape
+				BodyPiece{pos: Pos{0, 0},             rotation: 0, pieceType: "LeftBrkTorso"},
+				BodyPiece{pos: Pos{genericSize.h, 0}, rotation: 270, pieceType: "Head"},
+				BodyPiece{pos: Pos{0, genericSize.h}, rotation: 0, pieceType: "Leg"},
 			},
 		},
 	}
