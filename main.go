@@ -477,7 +477,11 @@ func (g *Game) drawSidebar(screen *ebiten.Image) {
 
 	// Draw current score
 	ebitenutil.DebugPrintAt(screen, "SCORE", sidebarX+10, 120)
-	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("%d", g.score), sidebarX+10, 140)
+	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("%d", g.score), sidebarX+80, 120)
+
+	// Draw current speed level
+	ebitenutil.DebugPrintAt(screen, "SPEED", sidebarX+10, 140)
+	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("%d", g.speedLevelIdx + 1), sidebarX+80, 140)
 }
 
 /*
