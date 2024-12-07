@@ -6,6 +6,7 @@ import (
 	"log"
 	"math/rand"
 	"os"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -445,6 +446,67 @@ func (g *Game) drawSidebar(screen *ebiten.Image) {
 	// Draw current score
 	ebitenutil.DebugPrintAt(screen, "SCORE", sidebarX+10, 120)
 	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("%d", g.score), sidebarX+10, 140)
+
+	// Draw hints about joint bodies
+	hintY := screenHeight - 40
+	hintHeight := 0
+	for i := 0; i < len(allBodies); i++ {
+		body := allBodies[len(allBodies)-1-i]
+
+		hintPos := Pos{sidebarX + 20 + (i%2)*60, hintY}
+		if 0 < i && i%2 == 0 {
+			hintPos.y -= hintHeight + 40
+			hintHeight = 0
+		}
+
+		ebitenutil.DebugPrintAt(screen, body.name, hintPos.x, hintPos.y)
+		ebitenutil.DebugPrintAt(screen, fmt.Sprintf("%d", body.score), hintPos.x, hintPos.y + 20)
+
+		boxPos, boxSize := g.getBoundingBox(body)
+		
+		if hintHeight < boxSize.h * scale {
+			hintHeight = boxSize.h * scale
+		}
+
+		bodyMinPos := Pos{hintPos.x + 25 - scale * boxSize.w / 2, hintPos.y + 10 - scale * boxSize.h}
+		for _, bp := range body.bodyPieces {
+			piece := g.getPiece(bp.pieceType)
+			w, h := grid2ScrSize(float32(piece.size.w)/2, float32(piece.size.h)/2)
+			
+			op := &ebiten.DrawImageOptions{}
+			imageScaleX, imageScaleY := piece.getScale()
+			op.GeoM.Scale(imageScaleX, imageScaleY) // Apply scaling to the next piece
+			op.GeoM.Translate(float64(-w), float64(-h))
+			op.GeoM.Rotate(-getRotationTheta(bp.rotation))
+			op.GeoM.Translate(float64(bodyMinPos.x + (bp.pos.x - boxPos.x) * scale), float64(bodyMinPos.y + (bp.pos.y - boxPos.y) * scale))
+			screen.DrawImage(piece.image, op)
+		}
+	}
+}
+
+/*
+Returns the bounding box of a body in bodyPiece CS.
+*/
+func (g *Game) getBoundingBox(body *Body) (Pos, Size) {
+	minPos := Pos{}
+	maxPos := Pos{}
+
+	for i, bp := range body.bodyPieces {
+		piece := g.getPiece(bp.pieceType)
+		rotatedSize := rotateSize(piece.size, piece.currentRotation)
+
+		if i == 0 || bp.pos.x < minPos.x { minPos.x = bp.pos.x }
+		if i == 0 || bp.pos.y < minPos.y { minPos.y = bp.pos.y }
+		if i == 0 || maxPos.x < bp.pos.x + rotatedSize.w { maxPos.x = bp.pos.x + rotatedSize.w }
+		if i == 0 || maxPos.y < bp.pos.y + rotatedSize.h { maxPos.y = bp.pos.y + rotatedSize.h }
+	}
+	
+	return minPos, Size{maxPos.x-minPos.x, maxPos.y-minPos.y}
+}
+
+func (g *Game) getPiece(pieceType string) *Piece {
+  idx := slices.IndexFunc(allPieces, func(p Piece) bool { return p.pieceType == pieceType })
+	return &allPieces[idx]
 }
 
 /*
