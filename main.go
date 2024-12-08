@@ -458,7 +458,7 @@ func (g *Game) drawSidebar(screen *ebiten.Image) {
 		// go to row above if no more space on the sidebar row
 		if !ok {
 			hintPosLL.x = sidebarX
-			hintPosLL.y -= hintRowHeight
+			hintPosLL.y -= hintRowHeight + 10
 			ok, hintAreaSize = g.drawSidebarHint(screen, body, hintPosLL)
 		}
 		
@@ -472,7 +472,7 @@ func (g *Game) drawSidebar(screen *ebiten.Image) {
 
 func (g *Game) drawSidebarHint(screen *ebiten.Image, body *Body, posLL Pos) (bool, Size) {
 	hintTextAreaHeight := 40
-	hintAreaSize := Size{60, hintTextAreaHeight} // text + pieces together
+	hintAreaSize := Size{70, hintTextAreaHeight} // text + pieces together
 
 	// check if outside of screen
 	if screenWidth < posLL.x + hintAreaSize.w {
@@ -480,9 +480,9 @@ func (g *Game) drawSidebarHint(screen *ebiten.Image, body *Body, posLL Pos) (boo
 	}
 
 	// draw text
-	hintTextPos := addPos(posLL, Pos{20, -hintTextAreaHeight})
-	ebitenutil.DebugPrintAt(screen, body.name, hintTextPos.x, hintTextPos.y)
-	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("%d", body.score), hintTextPos.x, hintTextPos.y + 20)
+	hintTextPos := addPos(posLL, Pos{0, -hintTextAreaHeight})
+	ebitenutil.DebugPrintAt(screen, body.name, hintTextPos.x, hintTextPos.y) // todo: render text at the center of the hint area
+	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("%d", body.score), hintTextPos.x, hintTextPos.y + 20) // todo: render text at the center of the hint area
 
 	// get dimension of the body
 	boxPos, boxSize := g.getBoundingBox(body)
