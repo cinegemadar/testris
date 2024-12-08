@@ -41,10 +41,11 @@ go run main.go body.go geom.go
 
 ## Controls
 
-- **Left Arrow**: Move piece left
-- **Right Arrow**: Move piece right
-- **Space**: Rotate piece
-- **Enter**: Drop piece to its final place
+- **Left Arrow** || **Numpad7**: Move piece left
+- **Right Arrow** || **Numpad9**: Move piece right
+- **Enter** || **Numpad8**: Rotate piece
+- **Down Arrow** || **Space**: Drop piece to its final place
+- **S**: Increase speed
 
 ## Contributing
 
