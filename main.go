@@ -6,6 +6,7 @@ import (
 	"log"
 	"math/rand"
 	"os"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -45,7 +46,7 @@ type Piece struct {
 	size            Size          // Dimensions of the piece on the grid
 	pieceType       string        // Head, Torso, Leg
 	pos             Pos           // Position of the piece on the grid (top left corner)
-	dropKeyPressed  bool
+	// dropKeyPressed  bool
 }
 
 /*
@@ -54,6 +55,10 @@ The size of the rendered image must be Piece.size on grid independently of the i
 */
 func (piece *Piece) getScale() (float64, float64) {
 	return scale * float64(piece.size.w) / float64(piece.image.Bounds().Max.X), scale * float64(piece.size.h) / float64(piece.image.Bounds().Max.Y)
+}
+
+func (piece *Piece) isBomb() bool {
+	return piece.pieceType == "Bomb"
 }
 
 /*
@@ -82,17 +87,7 @@ func (g *Game) dropPiece() {
 	for g.canMove(g.activePiece, 0, 1) {
 		g.activePiece.pos.y++
 	}
-	g.lockPiece(g.activePiece)
-	g.joinAndScorePieces([]*Piece{g.activePiece})
-	g.spawnNewPiece()
-}
-
-func (g *Game) movePiece(direction int, pressed *bool, key ebiten.Key) {
-	g.handleKeyPress(key, pressed, func() {
-		if g.canMove(g.activePiece, direction, 0) {
-			g.activePiece.pos.x += direction
-		}
-	})
+	g.handleActivePieceLanded()
 }
 
 func mustLoadImage(path string) *ebiten.Image {
@@ -160,6 +155,7 @@ endGame handles the end of the game, saving the score and checking for a new hig
 */
 func (g *Game) endGame() {
 	g.gameOver = true
+	log.Printf("Game ended. Spawn stat: %v", g.spawnStat)
 	// Save the current score to the highscore file
 	g.saveScore(g.score)
 
@@ -199,12 +195,14 @@ type Game struct {
 	dropKeyPressed      bool
 	speedupKeyPressed   bool
 	speedLevelIdx       int // index in speedLevels
+	spawnStat           map[string]int // game statistics: number of spawned pieces per piece type
 }
 
 /*
 Reset reinitializes the game state to start a new game.
 */
 func (g *Game) Reset() {
+	log.Printf("Game reset. Spawn stat: %v", g.spawnStat)
 	*g = *NewGame()
 }
 
@@ -232,7 +230,8 @@ func init() {
 	allPieces = []Piece{
 		{image: mustLoadImage("assets/head10x10.png"), currentRotation: 0, size: Size{1, 1}, pieceType: "Head"},
 		{image: mustLoadImage("assets/torso10x10.png"), currentRotation: 0, size: Size{1, 1}, pieceType: "Torso"},
-		{image: mustLoadImage("assets/broken_torso10x10.png"), currentRotation: 0, size: Size{1, 1}, pieceType: "BrokenTorso"},
+		{image: mustLoadImage("assets/right_brk_torso10x10.png"), currentRotation: 0, size: Size{1, 1}, pieceType: "RightBrkTorso"},
+		{image: mustLoadImage("assets/left_brk_torso10x10.png"), currentRotation: 0, size: Size{1, 1}, pieceType: "LeftBrkTorso"},
 		{image: mustLoadImage("assets/leg10x10.png"), currentRotation: 0, size: Size{1, 1}, pieceType: "Leg"},
 		{image: mustLoadImage("assets/bomb11x11.png"), currentRotation: 0, size: Size{1, 1}, pieceType: "Bomb"},
 	}
@@ -241,32 +240,38 @@ func init() {
 	genericSize := allPieces[0].size
 
 	allBodies = []*Body{
-		&Body{ // bar shape, consists of 4 parts
-			name:  "longi",
-			score: 2000,
-			bodyPieces: []BodyPiece{ // defined as vertical bar
-				BodyPiece{pos: Pos{0, 0},                 rotation: 0, pieceType: "Head"},
-				BodyPiece{pos: Pos{0, genericSize.h},     rotation: 0, pieceType: "Torso"},
-				BodyPiece{pos: Pos{0, 2 * genericSize.h}, rotation: 0, pieceType: "Torso"},
-				BodyPiece{pos: Pos{0, 3 * genericSize.h}, rotation: 0, pieceType: "Leg"},
-			},
-		},
-		&Body{ // bar shape, consists of 3 parts
-			name:  "fellow",
+		{ // bar shape, consists of 3 parts
+			name:  "Fellow",
 			score: 1000,
 			bodyPieces: []BodyPiece{ // defined as vertical bar
-				BodyPiece{pos: Pos{0, 0},                 rotation: 0, pieceType: "Head"},
-				BodyPiece{pos: Pos{0, genericSize.h},     rotation: 0, pieceType: "Torso"},
-				BodyPiece{pos: Pos{0, 2 * genericSize.h}, rotation: 0, pieceType: "Leg"},
+				{pos: Pos{0, 0}, rotation: 0, pieceType: "Head"},
+				{pos: Pos{0, genericSize.h}, rotation: 0, pieceType: "Torso"},
+				{pos: Pos{0, 2 * genericSize.h}, rotation: 0, pieceType: "Leg"},
+			},
+		}, &Body{ // bar shape, consists of 2 parts
+			name:  "Asshead",
+			score: 500,
+			bodyPieces: []BodyPiece{ // defined as vertical bar
+				BodyPiece{pos: Pos{0, 0}, rotation: 0, pieceType: "Head"},
+				BodyPiece{pos: Pos{0, genericSize.h}, rotation: 0, pieceType: "Leg"},
+			},
+		},
+		{ // bar shape, consists of 3 parts
+			name:  "Right broken",
+			score: 3000,
+			bodyPieces: []BodyPiece{ // defined as L shape
+				BodyPiece{pos: Pos{0, 0}, rotation: 90, pieceType: "Head"},
+				BodyPiece{pos: Pos{genericSize.h, 0}, rotation: 0, pieceType: "BrokenTorso"},
+				BodyPiece{pos: Pos{genericSize.h, genericSize.h}, rotation: 0, pieceType: "Leg"},
 			},
 		},
 		&Body{ // bar shape, consists of 3 parts
-			name:  "broken",
+			name:  "Left broken",
 			score: 3000,
 			bodyPieces: []BodyPiece{ // defined as L shape
-				BodyPiece{pos: Pos{0, 0},                         rotation: 90, pieceType: "Head"},
-				BodyPiece{pos: Pos{genericSize.h, 0},             rotation: 0, pieceType: "BrokenTorso"},
-				BodyPiece{pos: Pos{genericSize.h, genericSize.h}, rotation: 0, pieceType: "Leg"},
+				BodyPiece{pos: Pos{0, 0}, rotation: 0, pieceType: "LeftBrkTorso"},
+				BodyPiece{pos: Pos{genericSize.h, 0}, rotation: 270, pieceType: "Head"},
+				BodyPiece{pos: Pos{0, genericSize.h}, rotation: 0, pieceType: "Leg"},
 			},
 		},
 	}
@@ -288,11 +293,13 @@ func NewGame() *Game {
 		body.init()
 	}
 
-	return &Game{
-		grid:        theGrid,
-		activePiece: generatePiece(),
-		nextPiece:   generatePiece(),
-	}
+	game := &Game{}
+	game.grid =        theGrid
+	game.spawnStat =   make(map[string]int)
+	game.activePiece = game.generatePiece()
+	game.nextPiece =   game.generatePiece()
+	
+	return game
 }
 
 /*
@@ -395,7 +402,9 @@ rotate handles the rotation of the active piece when the space key is pressed.
 */
 func (g *Game) rotate() {
 	g.handleKeyPress(ebiten.KeySpace, &g.rotateKeyPressed, func() {
-		g.activePiece.currentRotation = (g.activePiece.currentRotation + 90) % 360
+		if !g.activePiece.isBomb() { // do not rotate bomb (it is symmetric and has a visual sparkle)
+			g.activePiece.currentRotation = (g.activePiece.currentRotation + 90) % 360
+		}
 	})
 }
 
@@ -609,6 +618,32 @@ func (g *Game) canMove(piece *Piece, dx, dy int) bool {
 }
 
 /*
+Call this when the active piece is landed. If does the following:
+If the active piece is a bomb: destroys piece below.
+Otherwise locks the piece, join and score bodies, then spawn a new piece.
+Spawn a new piece.
+*/
+func (g *Game) handleActivePieceLanded() {
+	if g.activePiece.isBomb() {
+		below := addPos(g.activePiece.pos, Pos{0, 1})
+		// is the location below the bomb within the grid?
+		if isWithinBounds(below, Size{1, 1}, Pos{1, 1}, Pos{gridSize.w - 1, gridSize.h - 1}) {
+			// remove (unlock) each piece below the bomb
+			for i := 0; i < g.activePiece.size.w; i++ {
+				piece := g.grid[below.x + i][below.y]
+				if piece != nil {
+					g.unlockPiece(piece)
+				}
+			}
+		}
+	} else {
+		g.lockPiece(g.activePiece)
+		g.joinAndScorePieces([]*Piece{g.activePiece})
+	}
+	g.spawnNewPiece()
+}
+
+/*
 lockPiece locks the active piece in its current position on the grid,
 adding it to the list of locked pieces.
 */
@@ -616,7 +651,7 @@ func (g *Game) lockPiece(piece *Piece) {
 	// find in the sorted locked list
 	idx := sort.Search(len(g.lockedPieces), func(i int) bool {
 		return piece.pos.y < g.lockedPieces[i].pos.y || (piece.pos.y == g.lockedPieces[i].pos.y && piece.pos.x <= g.lockedPieces[i].pos.x)
-		})
+	})
 
 	if idx < len(g.lockedPieces) && g.lockedPieces[idx] == piece {
 		log.Fatalf("The piece %v is not expected in the locked list!", piece)
@@ -624,7 +659,7 @@ func (g *Game) lockPiece(piece *Piece) {
 
 	// insert to sorted list
 	g.lockedPieces = append(g.lockedPieces, nil)
-	copy(g.lockedPieces[idx + 1:], g.lockedPieces[idx:])
+	copy(g.lockedPieces[idx+1:], g.lockedPieces[idx:])
 	g.lockedPieces[idx] = piece
 
 	// add references to the locked piece in the grid
@@ -638,15 +673,15 @@ func (g *Game) unlockPiece(lockedPiece *Piece) {
 	// find in the sorted locked list
 	idx := sort.Search(len(g.lockedPieces), func(i int) bool {
 		return lockedPiece.pos.y < g.lockedPieces[i].pos.y || (lockedPiece.pos.y == g.lockedPieces[i].pos.y && lockedPiece.pos.x <= g.lockedPieces[i].pos.x)
-		})
+	})
 
 	if idx == len(g.lockedPieces) || g.lockedPieces[idx] != lockedPiece {
 		log.Fatalf("The piece %v is expected in the locked list!", lockedPiece)
 	}
 
 	// remove from sorted list
-	g.lockedPieces = append(g.lockedPieces[:idx], g.lockedPieces[idx + 1:]...)
-		
+	g.lockedPieces = append(g.lockedPieces[:idx], g.lockedPieces[idx+1:]...)
+
 	// remove references to the locked piece in the grid
 	g.changePieceInGrid(lockedPiece, false)
 }
@@ -678,7 +713,7 @@ func (g *Game) spawnNewPiece() {
 	}
 
 	g.activePiece = g.nextPiece
-	g.nextPiece = generatePiece()
+	g.nextPiece = g.generatePiece()
 }
 
 func (g *Game) joinAndScorePieces(pieces []*Piece) {
@@ -728,7 +763,7 @@ func (g *Game) compactGrid() []*Piece {
 		// check if piece can fall
 		size := rotateSize(piece.size, piece.currentRotation)
 		dy := size.h - 1
-		for g.canMove(piece, 0, dy + 1) {
+		for g.canMove(piece, 0, dy+1) {
 			dy++
 		}
 
@@ -737,11 +772,11 @@ func (g *Game) compactGrid() []*Piece {
 			g.unlockPiece(piece)
 			piece.pos.y += dy
 			g.lockPiece(piece)
-			
+
 			fallenPieces = append(fallenPieces, piece)
 		}
 	}
-	
+
 	return fallenPieces
 }
 
@@ -749,11 +784,30 @@ func (g *Game) compactGrid() []*Piece {
 generatePiece creates a new piece from the available pieces and
 positions it at the top of the grid.
 */
-func generatePiece() *Piece {
-	newPiece := allPieces[rand.Intn(len(allPieces))]
+func (g *Game) generatePiece() *Piece {
+	bombIdx := slices.IndexFunc(allPieces, func(p Piece) bool { return p.isBomb() })
+	bombRelProb := float32(0.75) // relative probability to ordinary pieces
+
+	// generate random index of the new piece. take care that the bomb has different probability than ordinary pieces
+	newPieceIdx := rand.Intn(len(allPieces))
+	if newPieceIdx == bombIdx && bombRelProb < rand.Float32() {
+		newPieceIdx = rand.Intn(len(allPieces) - 1)
+		if newPieceIdx == bombIdx {
+			newPieceIdx++
+		}
+	}
+
+	newPiece := allPieces[newPieceIdx]
 	newPiece.pos.x = gridSize.w / 2
 	newPiece.pos.y = 0
-	newPiece.currentRotation = rand.Intn(4) * 90
+	if !newPiece.isBomb() { // do not rotate bomb (it is symmetric and has a visual sparkle)
+		newPiece.currentRotation = rand.Intn(4) * 90
+	}
+
+	// update statistics
+	val, _ := g.spawnStat[newPiece.pieceType]
+	val++
+	g.spawnStat[newPiece.pieceType] = val
 
 	return &newPiece
 }
