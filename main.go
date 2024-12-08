@@ -61,25 +61,6 @@ func (piece *Piece) isBomb() bool {
 }
 
 /*
-handleKeyRelease centralizes the handling of key releases to trigger actions.
-
-Parameters:
-- key: The ebiten key to check.
-- pressed: A pointer to a boolean indicating if the key was previously pressed.
-- action: The action to perform if the key is released.
-*/
-func (g *Game) handleKeyRelease(key ebiten.Key, pressed *bool, action func()) {
-	if !ebiten.IsKeyPressed(key) {
-		if *pressed {
-			action()
-		}
-		*pressed = false
-	} else {
-		*pressed = true
-	}
-}
-
-/*
 dropPiece moves the active piece as far down as possible.
 */
 func (g *Game) dropPiece() {
@@ -188,6 +169,11 @@ type Game struct {
 	dropFrameCount      int // counts frames. used for determining time to drop the piece
 	gameTimeSec         float32
 	gameOver            bool
+	rotateKeys          []ebiten.Key
+	leftKeys            []ebiten.Key
+	rightKeys           []ebiten.Key
+	dropKeys            []ebiten.Key
+	speedKeys           []ebiten.Key
 	rotateKeyPressed    bool
 	moveLeftKeyPressed  bool
 	moveRightKeyPressed bool
@@ -293,12 +279,18 @@ func NewGame() *Game {
 		body.init()
 	}
 
-	game := &Game{}
-	game.grid = theGrid
-	game.spawnStat = make(map[string]int)
+	game := &Game{
+
+		rotateKeys: []ebiten.Key{ebiten.KeyEnter, ebiten.KeyNumpad8},
+		leftKeys:   []ebiten.Key{ebiten.KeyArrowLeft, ebiten.KeyNumpad7},
+		rightKeys:  []ebiten.Key{ebiten.KeyArrowRight, ebiten.KeyNumpad9},
+		dropKeys:   []ebiten.Key{ebiten.KeyArrowDown, ebiten.KeyNumpad5, ebiten.KeySpace},
+		speedKeys:  []ebiten.Key{ebiten.KeyS},
+		spawnStat:  make(map[string]int),
+		grid:       theGrid,
+	}
 	game.activePiece = game.generatePiece()
 	game.nextPiece = game.generatePiece()
-
 	return game
 }
 
@@ -316,14 +308,14 @@ func (g *Game) Update() error {
 	g.restart() // Always check for restart
 
 	if !g.gameOver {
-		g.movePieceInDirection(-1, ebiten.KeyArrowLeft, &g.moveLeftKeyPressed)
-		g.movePieceInDirection(1, ebiten.KeyArrowRight, &g.moveRightKeyPressed)
+		g.movePieceInDirection(-1, g.leftKeys, &g.moveLeftKeyPressed)
+		g.movePieceInDirection(1, g.rightKeys, &g.moveRightKeyPressed)
 		g.rotate()
 		g.speedup()
 		if g.checkTimeToDrop() {
 			g.drop()
 		}
-		g.handleKeyRelease(ebiten.KeyEnter, &g.dropKeyPressed, g.dropPiece)
+		g.handleKeyPress(g.dropKeys, &g.dropKeyPressed, g.dropPiece)
 	}
 
 	return nil
@@ -386,22 +378,24 @@ Parameters:
 - pressed: A pointer to a boolean indicating if the key was previously pressed.
 - action: The action to perform if the key is pressed.
 */
-func (g *Game) handleKeyPress(key ebiten.Key, pressed *bool, action func()) {
-	if ebiten.IsKeyPressed(key) {
-		if !*pressed {
-			action()
+func (g *Game) handleKeyPress(keys []ebiten.Key, pressed *bool, action func()) {
+	for _, key := range keys {
+		if ebiten.IsKeyPressed(key) {
+			if !*pressed {
+				action()
+			}
+			*pressed = true
+			return
 		}
-		*pressed = true
-	} else {
-		*pressed = false
 	}
+	*pressed = false
 }
 
 /*
 rotate handles the rotation of the active piece when the space key is pressed.
 */
 func (g *Game) rotate() {
-	g.handleKeyPress(ebiten.KeySpace, &g.rotateKeyPressed, func() {
+	g.handleKeyPress(g.rotateKeys, &g.rotateKeyPressed, func() {
 		if !g.activePiece.isBomb() { // do not rotate bomb (it is symmetric and has a visual sparkle)
 			g.activePiece.currentRotation = (g.activePiece.currentRotation + 90) % 360
 		}
@@ -412,7 +406,7 @@ func (g *Game) rotate() {
 speedup handles the speding up when the "increase speed" key is pressed.
 */
 func (g *Game) speedup() {
-	g.handleKeyPress(ebiten.KeyS, &g.speedupKeyPressed, func() {
+	g.handleKeyPress(g.speedKeys, &g.speedupKeyPressed, func() {
 		if g.speedLevelIdx+1 < len(speedLevels) {
 			g.speedLevelIdx++
 			log.Printf("speed level increased manually to %d at %f sec", g.speedLevelIdx, g.gameTimeSec)
@@ -429,8 +423,8 @@ Parameters:
 - key: The ebiten key to check for the direction.
 - pressed: A pointer to a boolean indicating if the key was previously pressed.
 */
-func (g *Game) movePieceInDirection(direction int, key ebiten.Key, pressed *bool) {
-	g.handleKeyPress(key, pressed, func() {
+func (g *Game) movePieceInDirection(direction int, keys []ebiten.Key, pressed *bool) {
+	g.handleKeyPress(keys, pressed, func() {
 		if g.canMove(g.activePiece, direction, 0) {
 			g.activePiece.pos.x += direction
 		}
