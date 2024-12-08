@@ -26,8 +26,8 @@ const (
 )
 
 var (
-	gridSize         = Size{18, 18}
-	borderColor      = color.RGBA{R: 70, G: 255, B: 255, A: 255}
+	gridSize = Size{18, 18}
+	// borderColor      = color.RGBA{R: 70, G: 255, B: 255, A: 255}
 	boundingBoxColor = color.RGBA{R: 255, G: 255, B: 0, A: 255}
 	sidebarColor     = color.RGBA{R: 130, G: 130, B: 130, A: 255}
 	backgroundColor  = color.RGBA{R: 0, G: 0, B: 0, A: 255}
@@ -39,7 +39,7 @@ type Piece struct {
 	size            Size          // Dimensions of the piece on the grid
 	pieceType       string        // Head, Torso, Leg
 	pos             Pos           // Position of the piece on the grid (top left corner)
-	dropKeyPressed  bool
+	// dropKeyPressed  bool
 }
 
 /*
@@ -79,14 +79,6 @@ func (g *Game) dropPiece() {
 	g.lockPiece(g.activePiece)
 	g.joinAndScorePieces([]*Piece{g.activePiece})
 	g.spawnNewPiece()
-}
-
-func (g *Game) movePiece(direction int, pressed *bool, key ebiten.Key) {
-	g.handleKeyPress(key, pressed, func() {
-		if g.canMove(g.activePiece, direction, 0) {
-			g.activePiece.pos.x += direction
-		}
-	})
 }
 
 func mustLoadImage(path string) *ebiten.Image {
@@ -231,32 +223,32 @@ func init() {
 	genericSize := allPieces[0].size
 
 	allBodies = []*Body{
-		&Body{ // bar shape, consists of 4 parts
+		{ // bar shape, consists of 4 parts
 			name:  "longi",
 			score: 2000,
 			bodyPieces: []BodyPiece{ // defined as vertical bar
-				BodyPiece{pos: Pos{0, 0},                 rotation: 0, pieceType: "Head"},
-				BodyPiece{pos: Pos{0, genericSize.h},     rotation: 0, pieceType: "Torso"},
-				BodyPiece{pos: Pos{0, 2 * genericSize.h}, rotation: 0, pieceType: "Torso"},
-				BodyPiece{pos: Pos{0, 3 * genericSize.h}, rotation: 0, pieceType: "Leg"},
+				{pos: Pos{0, 0}, rotation: 0, pieceType: "Head"},
+				{pos: Pos{0, genericSize.h}, rotation: 0, pieceType: "Torso"},
+				{pos: Pos{0, 2 * genericSize.h}, rotation: 0, pieceType: "Torso"},
+				{pos: Pos{0, 3 * genericSize.h}, rotation: 0, pieceType: "Leg"},
 			},
 		},
-		&Body{ // bar shape, consists of 3 parts
+		{ // bar shape, consists of 3 parts
 			name:  "fellow",
 			score: 1000,
 			bodyPieces: []BodyPiece{ // defined as vertical bar
-				BodyPiece{pos: Pos{0, 0},                 rotation: 0, pieceType: "Head"},
-				BodyPiece{pos: Pos{0, genericSize.h},     rotation: 0, pieceType: "Torso"},
-				BodyPiece{pos: Pos{0, 2 * genericSize.h}, rotation: 0, pieceType: "Leg"},
+				{pos: Pos{0, 0}, rotation: 0, pieceType: "Head"},
+				{pos: Pos{0, genericSize.h}, rotation: 0, pieceType: "Torso"},
+				{pos: Pos{0, 2 * genericSize.h}, rotation: 0, pieceType: "Leg"},
 			},
 		},
-		&Body{ // bar shape, consists of 3 parts
+		{ // bar shape, consists of 3 parts
 			name:  "broken",
 			score: 3000,
 			bodyPieces: []BodyPiece{ // defined as L shape
-				BodyPiece{pos: Pos{0, 0},                         rotation: 90, pieceType: "Head"},
-				BodyPiece{pos: Pos{genericSize.h, 0},             rotation: 0, pieceType: "BrokenTorso"},
-				BodyPiece{pos: Pos{genericSize.h, genericSize.h}, rotation: 0, pieceType: "Leg"},
+				{pos: Pos{0, 0}, rotation: 90, pieceType: "Head"},
+				{pos: Pos{genericSize.h, 0}, rotation: 0, pieceType: "BrokenTorso"},
+				{pos: Pos{genericSize.h, genericSize.h}, rotation: 0, pieceType: "Leg"},
 			},
 		},
 	}
@@ -566,7 +558,7 @@ func (g *Game) lockPiece(piece *Piece) {
 	// find in the sorted locked list
 	idx := sort.Search(len(g.lockedPieces), func(i int) bool {
 		return piece.pos.y < g.lockedPieces[i].pos.y || (piece.pos.y == g.lockedPieces[i].pos.y && piece.pos.x <= g.lockedPieces[i].pos.x)
-		})
+	})
 
 	if idx < len(g.lockedPieces) && g.lockedPieces[idx] == piece {
 		log.Fatalf("The piece %v is not expected in the locked list!", piece)
@@ -574,7 +566,7 @@ func (g *Game) lockPiece(piece *Piece) {
 
 	// insert to sorted list
 	g.lockedPieces = append(g.lockedPieces, nil)
-	copy(g.lockedPieces[idx + 1:], g.lockedPieces[idx:])
+	copy(g.lockedPieces[idx+1:], g.lockedPieces[idx:])
 	g.lockedPieces[idx] = piece
 
 	// add references to the locked piece in the grid
@@ -588,15 +580,15 @@ func (g *Game) unlockPiece(lockedPiece *Piece) {
 	// find in the sorted locked list
 	idx := sort.Search(len(g.lockedPieces), func(i int) bool {
 		return lockedPiece.pos.y < g.lockedPieces[i].pos.y || (lockedPiece.pos.y == g.lockedPieces[i].pos.y && lockedPiece.pos.x <= g.lockedPieces[i].pos.x)
-		})
+	})
 
 	if idx == len(g.lockedPieces) || g.lockedPieces[idx] != lockedPiece {
 		log.Fatalf("The piece %v is expected in the locked list!", lockedPiece)
 	}
 
 	// remove from sorted list
-	g.lockedPieces = append(g.lockedPieces[:idx], g.lockedPieces[idx + 1:]...)
-		
+	g.lockedPieces = append(g.lockedPieces[:idx], g.lockedPieces[idx+1:]...)
+
 	// remove references to the locked piece in the grid
 	g.changePieceInGrid(lockedPiece, false)
 }
@@ -678,7 +670,7 @@ func (g *Game) compactGrid() []*Piece {
 		// check if piece can fall
 		size := rotateSize(piece.size, piece.currentRotation)
 		dy := size.h - 1
-		for g.canMove(piece, 0, dy + 1) {
+		for g.canMove(piece, 0, dy+1) {
 			dy++
 		}
 
@@ -687,11 +679,11 @@ func (g *Game) compactGrid() []*Piece {
 			g.unlockPiece(piece)
 			piece.pos.y += dy
 			g.lockPiece(piece)
-			
+
 			fallenPieces = append(fallenPieces, piece)
 		}
 	}
-	
+
 	return fallenPieces
 }
 
