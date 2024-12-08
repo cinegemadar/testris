@@ -448,40 +448,63 @@ func (g *Game) drawSidebar(screen *ebiten.Image) {
 	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("%d", g.score), sidebarX+10, 140)
 
 	// Draw hints about joint bodies
-	hintY := screenHeight - 40
-	hintHeight := 0
+	hintPosLL := Pos{sidebarX, screenHeight}
+	hintRowHeight := 0
 	for i := 0; i < len(allBodies); i++ {
 		body := allBodies[len(allBodies)-1-i]
-
-		hintPos := Pos{sidebarX + 20 + (i%2)*60, hintY}
-		if 0 < i && i%2 == 0 {
-			hintPos.y -= hintHeight + 40
-			hintHeight = 0
-		}
-
-		ebitenutil.DebugPrintAt(screen, body.name, hintPos.x, hintPos.y)
-		ebitenutil.DebugPrintAt(screen, fmt.Sprintf("%d", body.score), hintPos.x, hintPos.y + 20)
-
-		boxPos, boxSize := g.getBoundingBox(body)
 		
-		if hintHeight < boxSize.h * scale {
-			hintHeight = boxSize.h * scale
+		ok, hintAreaSize := g.drawSidebarHint(screen, body, hintPosLL)
+
+		// go to row above if no more space on the sidebar row
+		if !ok {
+			hintPosLL.x = sidebarX
+			hintPosLL.y -= hintRowHeight
+			ok, hintAreaSize = g.drawSidebarHint(screen, body, hintPosLL)
+		}
+		
+		if hintRowHeight < hintAreaSize.h {
+			hintRowHeight = hintAreaSize.h
 		}
 
-		bodyMinPos := Pos{hintPos.x + 25 - scale * boxSize.w / 2, hintPos.y + 10 - scale * boxSize.h}
-		for _, bp := range body.bodyPieces {
-			piece := g.getPiece(bp.pieceType)
-			w, h := grid2ScrSize(float32(piece.size.w)/2, float32(piece.size.h)/2)
-			
-			op := &ebiten.DrawImageOptions{}
-			imageScaleX, imageScaleY := piece.getScale()
-			op.GeoM.Scale(imageScaleX, imageScaleY) // Apply scaling to the next piece
-			op.GeoM.Translate(float64(-w), float64(-h))
-			op.GeoM.Rotate(-getRotationTheta(bp.rotation))
-			op.GeoM.Translate(float64(bodyMinPos.x + (bp.pos.x - boxPos.x) * scale), float64(bodyMinPos.y + (bp.pos.y - boxPos.y) * scale))
-			screen.DrawImage(piece.image, op)
-		}
+		hintPosLL.x += hintAreaSize.w
 	}
+}
+
+func (g *Game) drawSidebarHint(screen *ebiten.Image, body *Body, posLL Pos) (bool, Size) {
+	hintTextAreaHeight := 40
+	hintAreaSize := Size{60, hintTextAreaHeight} // text + pieces together
+
+	// check if outside of screen
+	if screenWidth < posLL.x + hintAreaSize.w {
+		return false, hintAreaSize
+	}
+
+	// draw text
+	hintTextPos := addPos(posLL, Pos{20, -hintTextAreaHeight})
+	ebitenutil.DebugPrintAt(screen, body.name, hintTextPos.x, hintTextPos.y)
+	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("%d", body.score), hintTextPos.x, hintTextPos.y + 20)
+
+	// get dimension of the body
+	boxPos, boxSize := g.getBoundingBox(body)
+	hintAreaSize.h += boxSize.h * scale
+
+	// draw text pieces
+	bodyPosUL := addPos(posLL, Pos{hintAreaSize.w / 2 - scale * boxSize.w / 2, -hintAreaSize.h})
+	for _, bp := range body.bodyPieces {
+		piece := g.getPiece(bp.pieceType)
+		w, h := grid2ScrSize(float32(piece.size.w)/2, float32(piece.size.h)/2)
+		
+		op := &ebiten.DrawImageOptions{}
+		imageScaleX, imageScaleY := piece.getScale()
+		op.GeoM.Scale(imageScaleX, imageScaleY) // Apply scaling to the next piece
+		op.GeoM.Translate(float64(-w), float64(-h))
+		op.GeoM.Rotate(-getRotationTheta(bp.rotation))
+		op.GeoM.Translate(float64(bodyPosUL.x + (bp.pos.x - boxPos.x) * scale), float64(bodyPosUL.y + (bp.pos.y - boxPos.y) * scale))
+		op.GeoM.Translate(float64(w), float64(h))
+		screen.DrawImage(piece.image, op)
+	}
+
+	return true, hintAreaSize
 }
 
 /*
