@@ -214,7 +214,8 @@ func init() {
 	allPieces = []Piece{
 		{image: mustLoadImage("assets/head10x10.png"), currentRotation: 0, size: Size{1, 1}, pieceType: "Head"},
 		{image: mustLoadImage("assets/torso10x10.png"), currentRotation: 0, size: Size{1, 1}, pieceType: "Torso"},
-		{image: mustLoadImage("assets/broken_torso10x10.png"), currentRotation: 0, size: Size{1, 1}, pieceType: "BrokenTorso"},
+		{image: mustLoadImage("assets/right_brk_torso10x10.png"), currentRotation: 0, size: Size{1, 1}, pieceType: "RightBrkTorso"},
+		{image: mustLoadImage("assets/left_brk_torso10x10.png"), currentRotation: 0, size: Size{1, 1}, pieceType: "LeftBrkTorso"},
 		{image: mustLoadImage("assets/leg10x10.png"), currentRotation: 0, size: Size{1, 1}, pieceType: "Leg"},
 		{image: mustLoadImage("assets/bomb11x11.png"), currentRotation: 0, size: Size{1, 1}, pieceType: "Bomb"},
 	}
@@ -223,32 +224,38 @@ func init() {
 	genericSize := allPieces[0].size
 
 	allBodies = []*Body{
-		{ // bar shape, consists of 4 parts
-			name:  "longi",
-			score: 2000,
-			bodyPieces: []BodyPiece{ // defined as vertical bar
-				{pos: Pos{0, 0}, rotation: 0, pieceType: "Head"},
-				{pos: Pos{0, genericSize.h}, rotation: 0, pieceType: "Torso"},
-				{pos: Pos{0, 2 * genericSize.h}, rotation: 0, pieceType: "Torso"},
-				{pos: Pos{0, 3 * genericSize.h}, rotation: 0, pieceType: "Leg"},
-			},
-		},
 		{ // bar shape, consists of 3 parts
-			name:  "fellow",
+			name:  "Fellow",
 			score: 1000,
 			bodyPieces: []BodyPiece{ // defined as vertical bar
 				{pos: Pos{0, 0}, rotation: 0, pieceType: "Head"},
 				{pos: Pos{0, genericSize.h}, rotation: 0, pieceType: "Torso"},
 				{pos: Pos{0, 2 * genericSize.h}, rotation: 0, pieceType: "Leg"},
 			},
+		}, &Body{ // bar shape, consists of 2 parts
+			name:  "Asshead",
+			score: 500,
+			bodyPieces: []BodyPiece{ // defined as vertical bar
+				BodyPiece{pos: Pos{0, 0}, rotation: 0, pieceType: "Head"},
+				BodyPiece{pos: Pos{0, genericSize.h}, rotation: 0, pieceType: "Leg"},
+			},
 		},
 		{ // bar shape, consists of 3 parts
-			name:  "broken",
+			name:  "Right broken",
 			score: 3000,
 			bodyPieces: []BodyPiece{ // defined as L shape
-				{pos: Pos{0, 0}, rotation: 90, pieceType: "Head"},
-				{pos: Pos{genericSize.h, 0}, rotation: 0, pieceType: "BrokenTorso"},
-				{pos: Pos{genericSize.h, genericSize.h}, rotation: 0, pieceType: "Leg"},
+				BodyPiece{pos: Pos{0, 0}, rotation: 90, pieceType: "Head"},
+				BodyPiece{pos: Pos{genericSize.h, 0}, rotation: 0, pieceType: "BrokenTorso"},
+				BodyPiece{pos: Pos{genericSize.h, genericSize.h}, rotation: 0, pieceType: "Leg"},
+			},
+		},
+		&Body{ // bar shape, consists of 3 parts
+			name:  "Left broken",
+			score: 3000,
+			bodyPieces: []BodyPiece{ // defined as L shape
+				BodyPiece{pos: Pos{0, 0}, rotation: 0, pieceType: "LeftBrkTorso"},
+				BodyPiece{pos: Pos{genericSize.h, 0}, rotation: 270, pieceType: "Head"},
+				BodyPiece{pos: Pos{0, genericSize.h}, rotation: 0, pieceType: "Leg"},
 			},
 		},
 	}
