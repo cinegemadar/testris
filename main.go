@@ -362,9 +362,7 @@ locking it in place if it cannot move further.
 */
 func (g *Game) drop() {
 	if !g.canMove(g.activePiece, 0, 1) {
-		g.lockPiece(g.activePiece)
-		g.joinAndScorePieces([]*Piece{g.activePiece})
-		g.spawnNewPiece()
+		g.handleActivePieceLanded()
 	} else {
 		g.activePiece.pos.y++
 	}
