@@ -34,7 +34,6 @@ type SpeedLevel struct {
 var (
 	gridSize         = Size{18, 18}
 	speedLevels      = []SpeedLevel{{30, 30}, {26, 60}, {22, 90}, {19, 120}, {16, 150}, {13, 180}, {11, 210}, {9, 240}, {7, 270}, {6, 300}}
-	borderColor      = color.RGBA{R: 70, G: 255, B: 255, A: 255}
 	boundingBoxColor = color.RGBA{R: 255, G: 255, B: 0, A: 255}
 	sidebarColor     = color.RGBA{R: 130, G: 130, B: 130, A: 255}
 	backgroundColor  = color.RGBA{R: 0, G: 0, B: 0, A: 255}
@@ -194,7 +193,7 @@ type Game struct {
 	moveRightKeyPressed bool
 	dropKeyPressed      bool
 	speedupKeyPressed   bool
-	speedLevelIdx       int // index in speedLevels
+	speedLevelIdx       int            // index in speedLevels
 	spawnStat           map[string]int // game statistics: number of spawned pieces per piece type
 }
 
@@ -248,30 +247,30 @@ func init() {
 				{pos: Pos{0, genericSize.h}, rotation: 0, pieceType: "Torso"},
 				{pos: Pos{0, 2 * genericSize.h}, rotation: 0, pieceType: "Leg"},
 			},
-		}, &Body{ // bar shape, consists of 2 parts
+		}, { // bar shape, consists of 2 parts
 			name:  "Asshead",
 			score: 500,
 			bodyPieces: []BodyPiece{ // defined as vertical bar
-				BodyPiece{pos: Pos{0, 0}, rotation: 0, pieceType: "Head"},
-				BodyPiece{pos: Pos{0, genericSize.h}, rotation: 0, pieceType: "Leg"},
+				{pos: Pos{0, 0}, rotation: 0, pieceType: "Head"},
+				{pos: Pos{0, genericSize.h}, rotation: 0, pieceType: "Leg"},
 			},
 		},
 		{ // bar shape, consists of 3 parts
 			name:  "Right broken",
 			score: 3000,
 			bodyPieces: []BodyPiece{ // defined as L shape
-				BodyPiece{pos: Pos{0, 0}, rotation: 90, pieceType: "Head"},
-				BodyPiece{pos: Pos{genericSize.h, 0}, rotation: 0, pieceType: "BrokenTorso"},
-				BodyPiece{pos: Pos{genericSize.h, genericSize.h}, rotation: 0, pieceType: "Leg"},
+				{pos: Pos{0, 0}, rotation: 90, pieceType: "Head"},
+				{pos: Pos{genericSize.h, 0}, rotation: 0, pieceType: "RightBrkTorso"},
+				{pos: Pos{genericSize.h, genericSize.h}, rotation: 0, pieceType: "Leg"},
 			},
 		},
-		&Body{ // bar shape, consists of 3 parts
+		{ // bar shape, consists of 3 parts
 			name:  "Left broken",
 			score: 3000,
 			bodyPieces: []BodyPiece{ // defined as L shape
-				BodyPiece{pos: Pos{0, 0}, rotation: 0, pieceType: "LeftBrkTorso"},
-				BodyPiece{pos: Pos{genericSize.h, 0}, rotation: 270, pieceType: "Head"},
-				BodyPiece{pos: Pos{0, genericSize.h}, rotation: 0, pieceType: "Leg"},
+				{pos: Pos{0, 0}, rotation: 0, pieceType: "LeftBrkTorso"},
+				{pos: Pos{genericSize.h, 0}, rotation: 270, pieceType: "Head"},
+				{pos: Pos{0, genericSize.h}, rotation: 0, pieceType: "Leg"},
 			},
 		},
 	}
@@ -290,15 +289,16 @@ func NewGame() *Game {
 
 	// initialze bodies
 	for _, body := range allBodies {
+		print("%v", body)
 		body.init()
 	}
 
 	game := &Game{}
-	game.grid =        theGrid
-	game.spawnStat =   make(map[string]int)
+	game.grid = theGrid
+	game.spawnStat = make(map[string]int)
 	game.activePiece = game.generatePiece()
-	game.nextPiece =   game.generatePiece()
-	
+	game.nextPiece = game.generatePiece()
+
 	return game
 }
 
@@ -353,7 +353,7 @@ func (g *Game) checkTimeToDrop() bool {
 	if speedLevel.ticksPerDrop <= g.dropFrameCount {
 		g.dropFrameCount = 0
 
-		if g.speedLevelIdx + 1 < len(speedLevels) && float32(speedLevel.nextLevelTimeSec) < g.gameTimeSec {
+		if g.speedLevelIdx+1 < len(speedLevels) && float32(speedLevel.nextLevelTimeSec) < g.gameTimeSec {
 			g.speedLevelIdx++
 			log.Printf("speed level increased to %d at %d frames, %f sec", g.speedLevelIdx, g.frameCount, g.gameTimeSec)
 		}
@@ -413,7 +413,7 @@ speedup handles the speding up when the "increase speed" key is pressed.
 */
 func (g *Game) speedup() {
 	g.handleKeyPress(ebiten.KeyS, &g.speedupKeyPressed, func() {
-		if g.speedLevelIdx + 1 < len(speedLevels) {
+		if g.speedLevelIdx+1 < len(speedLevels) {
 			g.speedLevelIdx++
 			log.Printf("speed level increased manually to %d at %f sec", g.speedLevelIdx, g.gameTimeSec)
 		}
@@ -499,11 +499,99 @@ func (g *Game) drawSidebar(screen *ebiten.Image) {
 
 	// Draw current score
 	ebitenutil.DebugPrintAt(screen, "SCORE", sidebarX+10, 120)
-	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("%d", g.score), sidebarX+80, 120)
+	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("%d", g.score), sidebarX+10, 140)
 
-	// Draw current speed level
-	ebitenutil.DebugPrintAt(screen, "SPEED", sidebarX+10, 140)
-	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("%d", g.speedLevelIdx + 1), sidebarX+80, 140)
+	// Draw hints about joint bodies
+	hintPosLL := Pos{sidebarX, screenHeight}
+	hintRowHeight := 0
+	for i := 0; i < len(allBodies); i++ {
+		body := allBodies[len(allBodies)-1-i]
+
+		ok, hintAreaSize := g.drawSidebarHint(screen, body, hintPosLL)
+
+		// go to row above if no more space on the sidebar row
+		if !ok {
+			hintPosLL.x = sidebarX
+			hintPosLL.y -= hintRowHeight + 10
+			_, hintAreaSize = g.drawSidebarHint(screen, body, hintPosLL)
+		}
+
+		if hintRowHeight < hintAreaSize.h {
+			hintRowHeight = hintAreaSize.h
+		}
+
+		hintPosLL.x += hintAreaSize.w
+	}
+}
+
+func (g *Game) drawSidebarHint(screen *ebiten.Image, body *Body, posLL Pos) (bool, Size) {
+	hintTextAreaHeight := 40
+	hintAreaSize := Size{70, hintTextAreaHeight} // text + pieces together
+
+	// check if outside of screen
+	if screenWidth < posLL.x+hintAreaSize.w {
+		return false, hintAreaSize
+	}
+
+	// draw text
+	hintTextPos := addPos(posLL, Pos{0, -hintTextAreaHeight})
+	ebitenutil.DebugPrintAt(screen, body.name, hintTextPos.x, hintTextPos.y)                        // todo: render text at the center of the hint area
+	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("%d", body.score), hintTextPos.x, hintTextPos.y+20) // todo: render text at the center of the hint area
+
+	// get dimension of the body
+	boxPos, boxSize := g.getBoundingBox(body)
+	hintAreaSize.h += boxSize.h * scale
+
+	// draw text pieces
+	bodyPosUL := addPos(posLL, Pos{hintAreaSize.w/2 - scale*boxSize.w/2, -hintAreaSize.h})
+	for _, bp := range body.bodyPieces {
+		piece := g.getPiece(bp.pieceType)
+		w, h := grid2ScrSize(float32(piece.size.w)/2, float32(piece.size.h)/2)
+
+		op := &ebiten.DrawImageOptions{}
+		imageScaleX, imageScaleY := piece.getScale()
+		op.GeoM.Scale(imageScaleX, imageScaleY) // Apply scaling to the next piece
+		op.GeoM.Translate(float64(-w), float64(-h))
+		op.GeoM.Rotate(-getRotationTheta(bp.rotation))
+		op.GeoM.Translate(float64(bodyPosUL.x+(bp.pos.x-boxPos.x)*scale), float64(bodyPosUL.y+(bp.pos.y-boxPos.y)*scale))
+		op.GeoM.Translate(float64(w), float64(h))
+		screen.DrawImage(piece.image, op)
+	}
+
+	return true, hintAreaSize
+}
+
+/*
+Returns the bounding box of a body in bodyPiece CS.
+*/
+func (g *Game) getBoundingBox(body *Body) (Pos, Size) {
+	minPos := Pos{}
+	maxPos := Pos{}
+
+	for i, bp := range body.bodyPieces {
+		piece := g.getPiece(bp.pieceType)
+		rotatedSize := rotateSize(piece.size, piece.currentRotation)
+
+		if i == 0 || bp.pos.x < minPos.x {
+			minPos.x = bp.pos.x
+		}
+		if i == 0 || bp.pos.y < minPos.y {
+			minPos.y = bp.pos.y
+		}
+		if i == 0 || maxPos.x < bp.pos.x+rotatedSize.w {
+			maxPos.x = bp.pos.x + rotatedSize.w
+		}
+		if i == 0 || maxPos.y < bp.pos.y+rotatedSize.h {
+			maxPos.y = bp.pos.y + rotatedSize.h
+		}
+	}
+
+	return minPos, Size{maxPos.x - minPos.x, maxPos.y - minPos.y}
+}
+
+func (g *Game) getPiece(pieceType string) *Piece {
+	idx := slices.IndexFunc(allPieces, func(p Piece) bool { return p.pieceType == pieceType })
+	return &allPieces[idx]
 }
 
 /*
@@ -630,7 +718,7 @@ func (g *Game) handleActivePieceLanded() {
 		if isWithinBounds(below, Size{1, 1}, Pos{1, 1}, Pos{gridSize.w - 1, gridSize.h - 1}) {
 			// remove (unlock) each piece below the bomb
 			for i := 0; i < g.activePiece.size.w; i++ {
-				piece := g.grid[below.x + i][below.y]
+				piece := g.grid[below.x+i][below.y]
 				if piece != nil {
 					g.unlockPiece(piece)
 				}
@@ -805,7 +893,7 @@ func (g *Game) generatePiece() *Piece {
 	}
 
 	// update statistics
-	val, _ := g.spawnStat[newPiece.pieceType]
+	val := g.spawnStat[newPiece.pieceType]
 	val++
 	g.spawnStat[newPiece.pieceType] = val
 

@@ -8,9 +8,9 @@ import (
 represents a piece of the body
 */
 type BodyPiece struct {
-	pos         Pos       // relative position in the body local CS (origin of the CS is not fixed, can be one of the body piece)
-	rotation    int       // rotation 0:right, 90:top, 180:left, 270:bottom
-	pieceType   string    // type of the piece. must match to one of the globally available piece types
+	pos       Pos    // relative position in the body local CS (origin of the CS is not fixed, can be one of the body piece)
+	rotation  int    // rotation 0:right, 90:top, 180:left, 270:bottom
+	pieceType string // type of the piece. must match to one of the globally available piece types
 }
 
 /*
@@ -19,14 +19,15 @@ the pieces are arranged in a specific geometry.
 note that any specific piece type can be used one or more times in the geometry.
 */
 type Body struct {
-	name            string            // name of the body
-	score           int               //
-	bodyPieces      []BodyPiece       // pieces which can be joined
-	pieceTypeToIdx  map[string][]int  // maps piece type to indices in bodyPieces
+	name           string           // name of the body
+	score          int              //
+	bodyPieces     []BodyPiece      // pieces which can be joined
+	pieceTypeToIdx map[string][]int // maps piece type to indices in bodyPieces
 }
 
 func (b *Body) init() {
 	// already initialized?
+	print(b.name)
 	if b.pieceTypeToIdx != nil {
 		return
 	}
@@ -48,7 +49,9 @@ func (body *Body) matchAtLockedPiece(g *Game, lockedPiece *Piece) []Pos {
 	log.Printf(" Body[%s].matchAtLockedPiece(lockedPiece:%s,pos:%v,rot:%d)", body.name, lockedPiece.pieceType, lockedPiece.pos, lockedPiece.currentRotation)
 	// check if the body contains at least one body piece having the same type as the locked piece?
 	idxList, ok := body.pieceTypeToIdx[lockedPiece.pieceType]
-	if !ok { return nil }
+	if !ok {
+		return nil
+	}
 
 	// enumerate the body pieces of the body having the required type. try to match the body to the grid at that body piece
 	for _, idx := range idxList {
@@ -96,8 +99,8 @@ func (body *Body) matchBodyPieceAtLockedPiece(g *Game, bodyPiece *BodyPiece, loc
 			log.Printf("  Checking '%s'@%v... Position %v is slightly off", bp.pieceType, posGridCs, piece.pos)
 			return nil
 		}
-		if !angleDegEq(piece.currentRotation, bp.rotation - bodyCsRotation) {
-			log.Printf("  Checking '%s'@%v... Piece orientation %d mismatches to expected %d.", bp.pieceType, posGridCs, piece.currentRotation, bp.rotation + bodyCsRotation)
+		if !angleDegEq(piece.currentRotation, bp.rotation-bodyCsRotation) {
+			log.Printf("  Checking '%s'@%v... Piece orientation %d mismatches to expected %d.", bp.pieceType, posGridCs, piece.currentRotation, bp.rotation+bodyCsRotation)
 			return nil
 		}
 
