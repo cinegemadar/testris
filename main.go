@@ -135,6 +135,7 @@ endGame handles the end of the game, saving the score and checking for a new hig
 */
 func (g *Game) endGame() {
 	g.gameOver = true
+	MUSIC_PLAYER.Pause()
 	log.Printf("Game ended. Spawn stat: %v", g.spawnStat)
 	// Save the current score to the highscore file
 	g.saveScore(g.score)
@@ -189,6 +190,7 @@ Reset reinitializes the game state to start a new game.
 func (g *Game) Reset() {
 	log.Printf("Game reset. Spawn stat: %v", g.spawnStat)
 	*g = *NewGame()
+	MUSIC_PLAYER.Play()
 }
 
 /*
@@ -267,6 +269,7 @@ NewGame creates and returns a new Game instance with initialized pieces
 and game state.
 */
 func NewGame() *Game {
+	MUSIC_PLAYER.Play()
 	// allocate grid
 	theGrid := make([][]*Piece, gridSize.w)
 	for i := 0; i < gridSize.w; i++ {
@@ -495,7 +498,7 @@ func (g *Game) drawSidebar(screen *ebiten.Image) {
 
 	// Draw current speed level
 	ebitenutil.DebugPrintAt(screen, "SPEED", sidebarX+10, 140)
-	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("%d", g.speedLevelIdx + 1), sidebarX+80, 140)
+	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("%d", g.speedLevelIdx+1), sidebarX+80, 140)
 
 	// Draw hints about joint bodies
 	hintPosLL := Pos{sidebarX, screenHeight}
@@ -899,11 +902,18 @@ func (g *Game) generatePiece() *Piece {
 /*
 main initializes the game window and starts the game loop.
 */
+var MUSIC_PLAYER *Audio
+
+func init() {
+
+	MUSIC_PLAYER = NewAudio("assets/theme.mp3")
+}
+
 func main() {
 	log.SetFlags(log.Ltime)
 	ebiten.SetWindowSize(screenWidth, screenHeight)
 	ebiten.SetWindowTitle("TESTRis - Fixed Piece Spawning and Locking")
-
+	// init() is already called automatically by Go runtime
 	game := NewGame()
 	if err := ebiten.RunGame(game); err != nil {
 		log.Fatal(err)
