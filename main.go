@@ -362,9 +362,7 @@ locking it in place if it cannot move further.
 */
 func (g *Game) drop() {
 	if !g.canMove(g.activePiece, 0, 1) {
-		g.lockPiece(g.activePiece)
-		g.joinAndScorePieces([]*Piece{g.activePiece})
-		g.spawnNewPiece()
+		g.handleActivePieceLanded()
 	} else {
 		g.activePiece.pos.y++
 	}
@@ -493,7 +491,11 @@ func (g *Game) drawSidebar(screen *ebiten.Image) {
 
 	// Draw current score
 	ebitenutil.DebugPrintAt(screen, "SCORE", sidebarX+10, 120)
-	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("%d", g.score), sidebarX+10, 140)
+	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("%d", g.score), sidebarX+80, 120)
+
+	// Draw current speed level
+	ebitenutil.DebugPrintAt(screen, "SPEED", sidebarX+10, 140)
+	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("%d", g.speedLevelIdx + 1), sidebarX+80, 140)
 
 	// Draw hints about joint bodies
 	hintPosLL := Pos{sidebarX, screenHeight}
