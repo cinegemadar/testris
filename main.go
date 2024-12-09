@@ -36,7 +36,7 @@ var (
 	speedLevels      = []SpeedLevel{{30, 30}, {26, 60}, {22, 90}, {19, 120}, {16, 150}, {13, 180}, {11, 210}, {9, 240}, {7, 270}, {6, 300}}
 	boundingBoxColor = color.RGBA{R: 255, G: 255, B: 0, A: 255}
 	sidebarColor     = color.RGBA{R: 130, G: 130, B: 130, A: 255}
-	backgroundColor  = color.RGBA{R: 0, G: 0, B: 0, A: 255}
+	backgroundColor  = color.RGBA{R: 100, G: 100, B: 100, A: 255}
 )
 
 type Piece struct {
@@ -495,7 +495,7 @@ func (g *Game) drawSidebar(screen *ebiten.Image) {
 
 	// Draw current speed level
 	ebitenutil.DebugPrintAt(screen, "SPEED", sidebarX+10, 140)
-	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("%d", g.speedLevelIdx + 1), sidebarX+80, 140)
+	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("%d", g.speedLevelIdx+1), sidebarX+80, 140)
 
 	// Draw hints about joint bodies
 	hintPosLL := Pos{sidebarX, screenHeight}
