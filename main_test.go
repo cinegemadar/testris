@@ -313,3 +313,35 @@ func TestGameJoinAndScorePieces(t *testing.T) {
 	if game.lockedPieces[3] != piecesMat[2][5] { t.Errorf("Expected 4th locked piece d %v. Got %v instead.", piecesMat[2][5], game.lockedPieces[3]) }
 	if game.lockedPieces[4] != piecesMat[2][6] { t.Errorf("Expected 5th locked piece d %v. Got %v instead.", piecesMat[2][6], game.lockedPieces[4]) }
 }
+
+// TestGameJoinAndScorePieces tests the lockPieces and unlockPieces methods of Game.
+func TestGameGeneratePiece(t *testing.T) {
+	game := NewGame()
+	for i := 0; i < 100000; i++ {
+		game.generatePiece()
+	}
+
+	for a := 0; a < len(allPieces)-1; a++ {
+		spawnA := game.spawnStat[allPieces[a].pieceType]
+		probA, ok := game.spawnProb[allPieces[a].pieceType]
+		if !ok {
+			probA = 1.0
+		}
+
+		for b := a+1; b < len(allPieces); b++ {
+			spawnB := game.spawnStat[allPieces[b].pieceType]
+			probB, ok := game.spawnProb[allPieces[b].pieceType]
+			if !ok {
+				probB = 1.0
+			}
+
+			expectedSpawnA := float32(spawnB) * probA / probB
+
+			// allow may 10% error
+			if expectedSpawnA < float32(spawnA) * 0.9 || float32(spawnA) * 1.1 < expectedSpawnA {
+				t.Errorf("Incorrect nr of generated pieces: '%s'(%f%%):%d '%s'(%f%%):%d", allPieces[a].pieceType, 100*probA, spawnA, allPieces[b].pieceType, 100*probB, spawnB)
+			}
+//		t.Logf("Verify spawn, pieces idx:(%d,%d), spawn nr:(%d,%d), rel diff:%f", a, b, spawnB, spawnA, expectedSpawnA / float32(spawnA))
+		}
+	}
+}

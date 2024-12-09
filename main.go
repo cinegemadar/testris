@@ -179,8 +179,9 @@ type Game struct {
 	moveRightKeyPressed bool
 	dropKeyPressed      bool
 	speedupKeyPressed   bool
-	speedLevelIdx       int            // index in speedLevels
-	spawnStat           map[string]int // game statistics: number of spawned pieces per piece type
+	speedLevelIdx       int                // index in speedLevels
+	spawnProb           map[string]float32 // relative probability by piece type (default is 1.0)
+	spawnStat           map[string]int     // game statistics: number of spawned pieces per piece type
 }
 
 /*
@@ -286,6 +287,7 @@ func NewGame() *Game {
 		rightKeys:  []ebiten.Key{ebiten.KeyArrowRight, ebiten.KeyNumpad9},
 		dropKeys:   []ebiten.Key{ebiten.KeyArrowDown, ebiten.KeyNumpad5, ebiten.KeySpace},
 		speedKeys:  []ebiten.Key{ebiten.KeyS},
+		spawnProb:  map[string]float32{ "Torso":0.5, "RightBrkTorso":0.5, "LeftBrkTorso":0.5, "Bomb":0.75 },
 		spawnStat:  make(map[string]int),
 		grid:       theGrid,
 	}
@@ -869,16 +871,24 @@ generatePiece creates a new piece from the available pieces and
 positions it at the top of the grid.
 */
 func (g *Game) generatePiece() *Piece {
-	bombIdx := slices.IndexFunc(allPieces, func(p Piece) bool { return p.isBomb() })
-	bombRelProb := float32(0.75) // relative probability to ordinary pieces
-
-	// generate random index of the new piece. take care that the bomb has different probability than ordinary pieces
-	newPieceIdx := rand.Intn(len(allPieces))
-	if newPieceIdx == bombIdx && bombRelProb < rand.Float32() {
-		newPieceIdx = rand.Intn(len(allPieces) - 1)
-		if newPieceIdx == bombIdx {
-			newPieceIdx++
+	// determine the random range
+	var randRange float32 = 0.0
+	for _, p := range allPieces {
+		prob, ok := g.spawnProb[p.pieceType]
+		if !ok {
+			g.spawnProb[p.pieceType] = 1
+			prob = 1
 		}
+
+		randRange += prob
+	}
+
+	randNum := rand.Float32() * randRange
+
+	newPieceIdx := -1
+	for newPieceIdx+1 < len(allPieces) && 0 <= randNum {
+		newPieceIdx++
+		randNum -= g.spawnProb[allPieces[newPieceIdx].pieceType]
 	}
 
 	newPiece := allPieces[newPieceIdx]
