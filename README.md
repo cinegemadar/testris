@@ -28,7 +28,7 @@ TESTRis is a simple Tetris-like game implemented in Go using the Ebiten game lib
 2. Install the Ebiten library:
 
    ```bash
-   go get github.com/hajimehoshi/ebiten/v2
+   go get github.com/hajimehoshi/ebiten/v2@latest
    ```
 
 ## Usage
@@ -36,14 +36,14 @@ TESTRis is a simple Tetris-like game implemented in Go using the Ebiten game lib
 To run the game, execute the following command:
 
 ```bash
-go run main.go body.go geom.go
+go run main.go body.go geom.go audio.go
 ```
 
 ## Controls
 
-- **Left Arrow** || **Numpad7**: Move piece left
-- **Right Arrow** || **Numpad9**: Move piece right
-- **Enter** || **Numpad8**: Rotate piece
+- **Left Arrow** || **Numpad 7**: Move piece left
+- **Right Arrow** || **Numpad 9**: Move piece right
+- **Enter** || **Numpad 8**: Rotate piece
 - **Down Arrow** || **Space**: Drop piece to its final place
 - **S**: Increase speed
 
@@ -71,6 +71,9 @@ Please make sure all tests pass before submitting a pull request.
 ## Code Structure
 
 - `main.go`: Contains the main game logic and functions.
+- `body.go`: Manages the game pieces and their behaviors.
+- `geom.go`: Handles geometric calculations and piece positioning.
+- `audio.go`: Manages game audio and sound effects.
 - `assets/`: Directory containing image assets for the game pieces.
 
 ## License
