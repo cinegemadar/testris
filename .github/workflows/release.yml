@@ -47,11 +47,13 @@ jobs:
         release_name: Release ${{ github.ref }}
         draft: false
         prerelease: false
+      outputs:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
 
     - name: Upload Release Asset
       uses: actions/upload-release-asset@v1
       with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        upload_url: ${{ needs.create_release.outputs.upload_url }}
         asset_path: ./myapp.exe
         asset_name: myapp.exe
         asset_content_type: application/octet-stream
