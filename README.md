@@ -4,7 +4,7 @@
 
 TESTRis is a simple Tetris-like game implemented in Go using the Ebiten game library. The game features basic Tetris mechanics, including piece rotation, movement, and locking.
 
-![Game Play](assets/gameplay.png?raw=true "Game play")
+![Game Play](assets/gameplay.gif?raw=true "Game play")
 
 ## Features
 
