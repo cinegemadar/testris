@@ -53,8 +53,8 @@ func TestGameOver(t *testing.T) {
 
 	// Simulate game over
 	game.endGame()
-	if !game.gameOver {
-		t.Error("Expected gameOver to be true, got false")
+	if game.gameOver.getState() != StateBlocking {
+		t.Errorf("Expected state of gameOver component to be StateBlocking(%d), got %d", StateBlocking, game.gameOver.getState())
 	}
 
 	// Ensure high score is saved on game over
@@ -87,9 +87,13 @@ func TestNewGame(t *testing.T) {
 // TestGameReset tests the Reset method of Game.
 func TestGameReset(t *testing.T) {
 	game := NewGame()
+	game.score = 342
 	game.Reset()
 	if game == nil {
 		t.Error("Expected game to be reset, got nil")
+	}
+	if game.score != 0 {
+		t.Error("Expected game score reset to 0")
 	}
 }
 
@@ -105,6 +109,8 @@ func TestGameUpdate(t *testing.T) {
 // TestGameDraw tests the Draw method of Game.
 func TestGameDraw(t *testing.T) {
 	game := NewGame()
+	game.sideBar.setValues(game.nextPiece, game.score, game.speedLevelIdx+1, game.loadTopScores())
+
 	screen := ebiten.NewImage(screenWidth, screenHeight)
 	game.Draw(screen)
 }
@@ -121,7 +127,7 @@ func TestGameLayout(t *testing.T) {
 // TestGameCanMove tests the canMove method of Game.
 func TestGameCanMove(t *testing.T) {
 	game := NewGame()
-	if !game.canMove(game.activePiece, 0, 1) {
+	if !game.grid.canMove(game.activePiece, 0, 1) {
 		t.Error("Expected piece to be able to move down")
 	}
 }
@@ -131,11 +137,11 @@ func TestGameLockPiece(t *testing.T) {
 	game := NewGame()
 	piece := game.activePiece
 
-	game.lockPiece(game.activePiece)
-	if len(game.lockedPieces) != 1 {
-		t.Errorf("Expected 1 locked piece, got %d", len(game.lockedPieces))
+	game.grid.lockPiece(game.activePiece)
+	if len(game.grid.lockedPieces) != 1 {
+		t.Errorf("Expected 1 locked piece, got %d", len(game.grid.lockedPieces))
 	}
-	if game.grid[gridSize.w/2][0] != piece {
+	if game.grid.content[gridSize.w/2][0] != piece {
 		t.Errorf("Expected Game.grid refers to the locked piece")
 	}
 }
@@ -192,7 +198,7 @@ func fillGrid(g *Game, gridRows []string) [][]*Piece {
 
 				piece.pos = piecePos
 
-				g.lockPiece(&piece)
+				g.grid.lockPiece(&piece)
 			}
 
 			piecesRow = append(piecesRow, &piece)
@@ -206,8 +212,8 @@ func fillGrid(g *Game, gridRows []string) [][]*Piece {
 	return piecesMatrix
 }
 
-// TestGameJoinAndScorePieces tests the lockPieces and unlockPieces methods of Game.
-func TestGameLockUnlockPieces(t *testing.T) {
+// TestGridLockUnlockPieces tests the lockPieces and unlockPieces methods of Grid.
+func TestGridLockUnlockPieces(t *testing.T) {
 	game := NewGame()
 
 	gridDesc1 := []string {
@@ -222,46 +228,46 @@ func TestGameLockUnlockPieces(t *testing.T) {
 		"_   _   _", }  // 1
 	piecesMat2 := fillGrid(game, gridDesc2);
 
-	if len(game.lockedPieces) != 5 {
-		t.Errorf("Expected 5 locked pieces. Got %d instead.", len(game.lockedPieces))
+	if len(game.grid.lockedPieces) != 5 {
+		t.Errorf("Expected 5 locked pieces. Got %d instead.", len(game.grid.lockedPieces))
 	}
 
-	if game.lockedPieces[0] != piecesMat2[0][1] { t.Errorf("Expected 1st locked piece d %v. Got %v instead.", piecesMat2[0][1], game.lockedPieces[0]) }
-	if game.lockedPieces[1] != piecesMat2[0][2] { t.Errorf("Expected 2nd locked piece d %v. Got %v instead.", piecesMat2[0][2], game.lockedPieces[1]) }
-	if game.lockedPieces[2] != piecesMat1[1][0] { t.Errorf("Expected 3rd locked piece d %v. Got %v instead.", piecesMat1[0][0], game.lockedPieces[2]) }
-	if game.lockedPieces[3] != piecesMat1[1][1] { t.Errorf("Expected 4th locked piece d %v. Got %v instead.", piecesMat1[0][1], game.lockedPieces[3]) }
-	if game.lockedPieces[4] != piecesMat1[1][2] { t.Errorf("Expected 5th locked piece d %v. Got %v instead.", piecesMat1[0][2], game.lockedPieces[4]) }
+	if game.grid.lockedPieces[0] != piecesMat2[0][1] { t.Errorf("Expected 1st locked piece d %v. Got %v instead.", piecesMat2[0][1], game.grid.lockedPieces[0]) }
+	if game.grid.lockedPieces[1] != piecesMat2[0][2] { t.Errorf("Expected 2nd locked piece d %v. Got %v instead.", piecesMat2[0][2], game.grid.lockedPieces[1]) }
+	if game.grid.lockedPieces[2] != piecesMat1[1][0] { t.Errorf("Expected 3rd locked piece d %v. Got %v instead.", piecesMat1[0][0], game.grid.lockedPieces[2]) }
+	if game.grid.lockedPieces[3] != piecesMat1[1][1] { t.Errorf("Expected 4th locked piece d %v. Got %v instead.", piecesMat1[0][1], game.grid.lockedPieces[3]) }
+	if game.grid.lockedPieces[4] != piecesMat1[1][2] { t.Errorf("Expected 5th locked piece d %v. Got %v instead.", piecesMat1[0][2], game.grid.lockedPieces[4]) }
 
 	// unlock (remove) 2 pieces
 	p1 := piecesMat2[0][2]
 	p2 := piecesMat1[1][1]
-	game.unlockPiece(p1)
-	game.unlockPiece(p2)
+	game.grid.unlockPiece(p1)
+	game.grid.unlockPiece(p2)
 
-	if len(game.lockedPieces) != 3 {
-		t.Errorf("Expected 3 locked pieces. Got %d instead.", len(game.lockedPieces))
+	if len(game.grid.lockedPieces) != 3 {
+		t.Errorf("Expected 3 locked pieces. Got %d instead.", len(game.grid.lockedPieces))
 	}
 
-	if game.lockedPieces[0] != piecesMat2[0][1] { t.Errorf("Expected 1st locked piece d %v. Got %v instead.", piecesMat2[0][1], game.lockedPieces[0]) }
-	if game.lockedPieces[1] != piecesMat1[1][0] { t.Errorf("Expected 2nd locked piece d %v. Got %v instead.", piecesMat1[0][0], game.lockedPieces[1]) }
-	if game.lockedPieces[2] != piecesMat1[1][2] { t.Errorf("Expected 3rd locked piece d %v. Got %v instead.", piecesMat1[0][2], game.lockedPieces[2]) }
+	if game.grid.lockedPieces[0] != piecesMat2[0][1] { t.Errorf("Expected 1st locked piece d %v. Got %v instead.", piecesMat2[0][1], game.grid.lockedPieces[0]) }
+	if game.grid.lockedPieces[1] != piecesMat1[1][0] { t.Errorf("Expected 2nd locked piece d %v. Got %v instead.", piecesMat1[0][0], game.grid.lockedPieces[1]) }
+	if game.grid.lockedPieces[2] != piecesMat1[1][2] { t.Errorf("Expected 3rd locked piece d %v. Got %v instead.", piecesMat1[0][2], game.grid.lockedPieces[2]) }
 
 	// swap positions of two pieces
 	p1.pos, p2.pos = p2.pos, p1.pos
 
 	// lock (add) the 2 pieces
-	game.lockPiece(p1)
-	game.lockPiece(p2)
+	game.grid.lockPiece(p1)
+	game.grid.lockPiece(p2)
 
-	if len(game.lockedPieces) != 5 {
-		t.Errorf("Expected 5 locked pieces. Got %d instead.", len(game.lockedPieces))
+	if len(game.grid.lockedPieces) != 5 {
+		t.Errorf("Expected 5 locked pieces. Got %d instead.", len(game.grid.lockedPieces))
 	}
 
-	if game.lockedPieces[0] != piecesMat2[0][1] { t.Errorf("Expected 1st locked piece d %v. Got %v instead.", piecesMat2[0][1], game.lockedPieces[0]) }
-	if game.lockedPieces[1] != p2               { t.Errorf("Expected 2nd locked piece d %v. Got %v instead.", p2, game.lockedPieces[1]) }
-	if game.lockedPieces[2] != piecesMat1[1][0] { t.Errorf("Expected 3rd locked piece d %v. Got %v instead.", piecesMat1[0][0], game.lockedPieces[2]) }
-	if game.lockedPieces[3] != p1               { t.Errorf("Expected 4th locked piece d %v. Got %v instead.", p1, game.lockedPieces[3]) }
-	if game.lockedPieces[4] != piecesMat1[1][2] { t.Errorf("Expected 5th locked piece d %v. Got %v instead.", piecesMat1[0][2], game.lockedPieces[4]) }
+	if game.grid.lockedPieces[0] != piecesMat2[0][1] { t.Errorf("Expected 1st locked piece d %v. Got %v instead.", piecesMat2[0][1], game.grid.lockedPieces[0]) }
+	if game.grid.lockedPieces[1] != p2               { t.Errorf("Expected 2nd locked piece d %v. Got %v instead.", p2, game.grid.lockedPieces[1]) }
+	if game.grid.lockedPieces[2] != piecesMat1[1][0] { t.Errorf("Expected 3rd locked piece d %v. Got %v instead.", piecesMat1[0][0], game.grid.lockedPieces[2]) }
+	if game.grid.lockedPieces[3] != p1               { t.Errorf("Expected 4th locked piece d %v. Got %v instead.", p1, game.grid.lockedPieces[3]) }
+	if game.grid.lockedPieces[4] != piecesMat1[1][2] { t.Errorf("Expected 5th locked piece d %v. Got %v instead.", piecesMat1[0][2], game.grid.lockedPieces[4]) }
 }
 
 // TestGameJoinAndScorePieces tests the joinAndScorePieces method of Game.
@@ -303,13 +309,45 @@ func TestGameJoinAndScorePieces(t *testing.T) {
 		t.Errorf("Expected score (%d) is %d", game.score, origScore + 2 * fellow.score)
 	}
 
-	if len(game.lockedPieces) != 5 {
-		t.Errorf("Expected 5 locked pieces. Got %d instead.", len(game.lockedPieces))
+	if len(game.grid.lockedPieces) != 5 {
+		t.Errorf("Expected 5 locked pieces. Got %d instead.", len(game.grid.lockedPieces))
 	}
 
-	if game.lockedPieces[0] != piecesMat[1][1] { t.Errorf("Expected 1st locked piece d %v. Got %v instead.", piecesMat[1][1], game.lockedPieces[0]) }
-	if game.lockedPieces[1] != piecesMat[0][2] { t.Errorf("Expected 2nd locked piece d %v. Got %v instead.", piecesMat[0][2], game.lockedPieces[1]) }
-	if game.lockedPieces[2] != piecesMat[1][4] { t.Errorf("Expected 3rd locked piece d %v. Got %v instead.", piecesMat[1][4], game.lockedPieces[2]) }
-	if game.lockedPieces[3] != piecesMat[2][5] { t.Errorf("Expected 4th locked piece d %v. Got %v instead.", piecesMat[2][5], game.lockedPieces[3]) }
-	if game.lockedPieces[4] != piecesMat[2][6] { t.Errorf("Expected 5th locked piece d %v. Got %v instead.", piecesMat[2][6], game.lockedPieces[4]) }
+	if game.grid.lockedPieces[0] != piecesMat[1][1] { t.Errorf("Expected 1st locked piece d %v. Got %v instead.", piecesMat[1][1], game.grid.lockedPieces[0]) }
+	if game.grid.lockedPieces[1] != piecesMat[0][2] { t.Errorf("Expected 2nd locked piece d %v. Got %v instead.", piecesMat[0][2], game.grid.lockedPieces[1]) }
+	if game.grid.lockedPieces[2] != piecesMat[1][4] { t.Errorf("Expected 3rd locked piece d %v. Got %v instead.", piecesMat[1][4], game.grid.lockedPieces[2]) }
+	if game.grid.lockedPieces[3] != piecesMat[2][5] { t.Errorf("Expected 4th locked piece d %v. Got %v instead.", piecesMat[2][5], game.grid.lockedPieces[3]) }
+	if game.grid.lockedPieces[4] != piecesMat[2][6] { t.Errorf("Expected 5th locked piece d %v. Got %v instead.", piecesMat[2][6], game.grid.lockedPieces[4]) }
+}
+
+// TestGameGeneratePiece tests the generatePiece methods of Game.
+func TestGameGeneratePiece(t *testing.T) {
+	game := NewGame()
+	for i := 0; i < 100000; i++ {
+		game.generatePiece()
+	}
+
+	for a := 0; a < len(allPieces)-1; a++ {
+		spawnA := game.spawnStat[allPieces[a].pieceType]
+		probA, ok := game.spawnProb[allPieces[a].pieceType]
+		if !ok {
+			probA = 1.0
+		}
+
+		for b := a+1; b < len(allPieces); b++ {
+			spawnB := game.spawnStat[allPieces[b].pieceType]
+			probB, ok := game.spawnProb[allPieces[b].pieceType]
+			if !ok {
+				probB = 1.0
+			}
+
+			expectedSpawnA := float32(spawnB) * probA / probB
+
+			// allow may 10% error
+			if expectedSpawnA < float32(spawnA) * 0.9 || float32(spawnA) * 1.1 < expectedSpawnA {
+				t.Errorf("Incorrect nr of generated pieces: '%s'(%f%%):%d '%s'(%f%%):%d", allPieces[a].pieceType, 100*probA, spawnA, allPieces[b].pieceType, 100*probB, spawnB)
+			}
+//		t.Logf("Verify spawn, pieces idx:(%d,%d), spawn nr:(%d,%d), rel diff:%f", a, b, spawnB, spawnA, expectedSpawnA / float32(spawnA))
+		}
+	}
 }

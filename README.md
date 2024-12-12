@@ -36,7 +36,7 @@ TESTRis is a simple Tetris-like game implemented in Go using the Ebiten game lib
 To run the game, execute the following command:
 
 ```bash
-go run main.go body.go geom.go audio.go
+go run main.go body.go geom.go audio.go grid.go piece.go userinput.go component.go effect.go
 ```
 
 ## Controls
