@@ -6,14 +6,12 @@ import (
 	"log"
 	"math/rand"
 	"os"
-	"slices"
 	"sort"
 	"strconv"
 	"strings"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
-	"github.com/hajimehoshi/ebiten/v2/vector"
 )
 
 const highScoreFileName = "highscore.txt"
@@ -24,6 +22,13 @@ const (
 	sidebarWidth = 140
 	ticksPerSec  = 60 // Update() is called with this frequency
 	scale        = 30 // Unified scale factor for cells and sprites
+	
+	DrawOrderBkgd = 10
+	DrawOrderWaveEffect = 15
+	DrawOrderGrid = 20
+	DrawOrderActivePiece = 30
+	DrawOrderSideBar = 40
+	DrawOrderGameOver = 50
 )
 
 type SpeedLevel struct {
@@ -37,36 +42,17 @@ var (
 	boundingBoxColor = color.RGBA{R: 255, G: 255, B: 0, A: 255}
 	sidebarColor     = color.RGBA{R: 130, G: 130, B: 130, A: 255}
 	backgroundColor  = color.RGBA{R: 100, G: 100, B: 100, A: 255}
+	waveEffectColor       = color.RGBA{R: 183, G: 87, B: 8, A: 255}
+	waveEffectLifeTimeSec = float32(0.5) // length of the effect
+	waveEffectFillPcnt    = 0.3 // means x percent of the effect area is filled with the wave
+	userInput        *UserInput
 )
-
-type Piece struct {
-	image           *ebiten.Image // Single image for the piece
-	currentRotation int           // Current rotation in degrees (0, 90, 180, 270)
-	size            Size          // Dimensions of the piece on the grid
-	pieceType       string        // Head, Torso, Leg
-	pos             Pos           // Position of the piece on the grid (top left corner)
-	// dropKeyPressed  bool
-}
-
-/*
-Returns scale which also considers dimensions of the image.
-The size of the rendered image must be Piece.size on grid independently of the image resolution or size.
-*/
-func (piece *Piece) getScale() (float64, float64) {
-	return scale * float64(piece.size.w) / float64(piece.image.Bounds().Max.X), scale * float64(piece.size.h) / float64(piece.image.Bounds().Max.Y)
-}
-
-func (piece *Piece) isBomb() bool {
-	return piece.pieceType == "Bomb"
-}
 
 /*
 dropPiece moves the active piece as far down as possible.
 */
 func (g *Game) dropPiece() {
-	for g.canMove(g.activePiece, 0, 1) {
-		g.activePiece.pos.y++
-	}
+	g.grid.drop(g.activePiece)
 	g.handleActivePieceLanded()
 }
 
@@ -134,15 +120,23 @@ func (g *Game) saveScore(score int) {
 endGame handles the end of the game, saving the score and checking for a new high score.
 */
 func (g *Game) endGame() {
-	g.gameOver = true
+	g.apc.activate(false)
+
 	log.Printf("Game ended. Spawn stat: %v", g.spawnStat)
 	// Save the current score to the highscore file
 	g.saveScore(g.score)
 
+	gameOverText := []string{}
 	if g.score >= g.loadHighScore() {
-		ebitenutil.DebugPrintAt(ebiten.NewImage(screenWidth, screenHeight), "New High Score!", screenWidth/2-50, screenHeight/2+40)
-		log.Println("New high score achieved!")
+		gameOverText = append(gameOverText, "New High Score!")
+		log.Printf("New high score %d achieved!", g.score)
+	} else {
+		gameOverText = append(gameOverText, "GAME OVER")
 	}
+	gameOverText = append(gameOverText, fmt.Sprintf("Score: %d", g.score))
+
+	g.gameOver.text = gameOverText
+	g.gameOver.activate(true)
 }
 
 /*
@@ -160,25 +154,20 @@ func (g *Game) loadHighScore() int {
 }
 
 type Game struct {
-	grid                [][]*Piece // Store piece references for each grid cell
-	lockedPieces        []*Piece   // Array to store locked pieces, sorted first by y then x coordinate
+	compMgr             *ComponentMgr
+	background          *BackgroundComp
+	wave                *WaveEffectComp
+	grid                *GridComp
+	input               *UserInput
+	apc                 *PieceComp
+	gameOver            *DialogComp
+	sideBar             *SideBarComp
 	activePiece         *Piece
 	nextPiece           *Piece
 	score               int
 	frameCount          int
 	dropFrameCount      int // counts frames. used for determining time to drop the piece
 	gameTimeSec         float32
-	gameOver            bool
-	rotateKeys          []ebiten.Key
-	leftKeys            []ebiten.Key
-	rightKeys           []ebiten.Key
-	dropKeys            []ebiten.Key
-	speedKeys           []ebiten.Key
-	rotateKeyPressed    bool
-	moveLeftKeyPressed  bool
-	moveRightKeyPressed bool
-	dropKeyPressed      bool
-	speedupKeyPressed   bool
 	speedLevelIdx       int                // index in speedLevels
 	spawnProb           map[string]float32 // relative probability by piece type (default is 1.0)
 	spawnStat           map[string]int     // game statistics: number of spawned pieces per piece type
@@ -189,7 +178,23 @@ Reset reinitializes the game state to start a new game.
 */
 func (g *Game) Reset() {
 	log.Printf("Game reset. Spawn stat: %v", g.spawnStat)
-	*g = *NewGame()
+
+	g.compMgr.reset() // makes all component inactive
+
+	g.activePiece = g.generatePiece()
+	g.nextPiece = g.generatePiece()
+	g.score = 0
+	g.frameCount = 0
+	g.dropFrameCount = 0
+	g.gameTimeSec = 0
+	g.speedLevelIdx = 0
+	g.spawnStat = map[string]int{}
+
+	g.background.activate(true)
+	g.apc.activate(true)
+	g.grid.activate(true)
+	g.sideBar.activate(true)
+	g.apc.p = g.activePiece
 }
 
 /*
@@ -268,12 +273,6 @@ NewGame creates and returns a new Game instance with initialized pieces
 and game state.
 */
 func NewGame() *Game {
-	// allocate grid
-	theGrid := make([][]*Piece, gridSize.w)
-	for i := 0; i < gridSize.w; i++ {
-		theGrid[i] = make([]*Piece, gridSize.h)
-	}
-
 	// initialze bodies
 	for _, body := range allBodies {
 		print("%v", body)
@@ -281,18 +280,44 @@ func NewGame() *Game {
 	}
 
 	game := &Game{
-
-		rotateKeys: []ebiten.Key{ebiten.KeyEnter, ebiten.KeyNumpad8},
-		leftKeys:   []ebiten.Key{ebiten.KeyArrowLeft, ebiten.KeyNumpad7},
-		rightKeys:  []ebiten.Key{ebiten.KeyArrowRight, ebiten.KeyNumpad9},
-		dropKeys:   []ebiten.Key{ebiten.KeyArrowDown, ebiten.KeyNumpad5, ebiten.KeySpace},
-		speedKeys:  []ebiten.Key{ebiten.KeyS},
+		compMgr:    NewComponentMgr(),
 		spawnProb:  map[string]float32{ "Torso":0.5, "RightBrkTorso":0.5, "LeftBrkTorso":0.5, "Bomb":0.75 },
 		spawnStat:  make(map[string]int),
-		grid:       theGrid,
 	}
+
+	if userInput == nil {
+		userInput = NewUserInput(&map[string]KeyList{
+			"rotate": []ebiten.Key{ebiten.KeyEnter, ebiten.KeyNumpad8},
+			"left": []ebiten.Key{ebiten.KeyArrowLeft, ebiten.KeyNumpad7},
+			"right": []ebiten.Key{ebiten.KeyArrowRight, ebiten.KeyNumpad9},
+			"drop": []ebiten.Key{ebiten.KeyArrowDown, ebiten.KeyNumpad5, ebiten.KeySpace},
+			"speedup": []ebiten.Key{ebiten.KeyS}, } )
+	}
+
+	game.input = userInput
+	game.background = NewBackground(Pos{0, 0}, Size{screenWidth - sidebarWidth, screenHeight}, DrawOrderBkgd)
+	game.wave = NewWaveEffect(false, Rect{Pos{0, 0}, Size{screenWidth, screenHeight}}, scale, waveEffectFillPcnt, (int)(waveEffectLifeTimeSec * ticksPerSec), DrawOrderWaveEffect)
+	game.grid = NewGridComp(gridSize, DrawOrderGrid)
+	game.apc = NewPieceComp(game.grid, userInput, DrawOrderActivePiece)
+	game.gameOver = NewModalDialog([]string{}, Pos{screenWidth/2-50, screenHeight/2}, DrawOrderGameOver)
+	game.sideBar = NewSideBar(userInput, Pos{screenWidth - sidebarWidth, 0}, Size{sidebarWidth, screenHeight}, func() { game.Reset() }, DrawOrderSideBar)
+
+	game.compMgr.add(game.background)
+	game.compMgr.add(game.wave)
+	game.compMgr.add(game.grid)
+	game.compMgr.add(game.apc)
+	game.compMgr.add(game.gameOver)
+	game.compMgr.add(game.sideBar)
+
 	game.activePiece = game.generatePiece()
 	game.nextPiece = game.generatePiece()
+
+	game.background.activate(true)
+	game.apc.activate(true)
+	game.grid.activate(true)
+	game.sideBar.activate(true)
+	game.apc.p = game.activePiece
+	
 	return game
 }
 
@@ -307,40 +332,32 @@ func (g *Game) Update() error {
 	g.frameCount++
 	g.gameTimeSec += 1 / float32(ticksPerSec)
 
-	g.restart() // Always check for restart
+	g.input.handleKeys()
+	g.input.handleMouse()
+	g.compMgr.update(g.frameCount)
 
-	if !g.gameOver {
-		g.movePieceInDirection(-1, g.leftKeys, &g.moveLeftKeyPressed)
-		g.movePieceInDirection(1, g.rightKeys, &g.moveRightKeyPressed)
-		g.rotate()
+	if g.gameOver.getState() == StateInactive {
 		g.speedup()
-		if g.checkTimeToDrop() {
-			g.drop()
+
+		if g.checkTimeToMoveDown() {
+			g.moveDown()
 		}
-		g.handleKeyPress(g.dropKeys, &g.dropKeyPressed, g.dropPiece)
+
+		if g.input.isKeyPressed("drop") {
+			g.dropPiece()
+		}
 	}
+
+	g.sideBar.setValues(g.nextPiece, g.score, g.speedLevelIdx+1, g.loadTopScores())
 
 	return nil
-}
-
-/*
-Restart the game if the restart button is clicked on the sidebar.
-*/
-func (g *Game) restart() {
-	if ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) {
-		x, y := ebiten.CursorPosition()
-		sidebarX := screenWidth - sidebarWidth
-		if isWithinBounds(Pos{x, y}, Size{0, 0}, Pos{sidebarX + 10, 160}, Pos{sidebarX + 110, 180}) {
-			g.Reset()
-		}
-	}
 }
 
 /*
 determines if it is time to drop. increases speed if it is time to go to the next speed level.
 returns if it is time to drop.
 */
-func (g *Game) checkTimeToDrop() bool {
+func (g *Game) checkTimeToMoveDown() bool {
 	g.dropFrameCount++
 
 	speedLevel := speedLevels[g.speedLevelIdx]
@@ -362,8 +379,8 @@ func (g *Game) checkTimeToDrop() bool {
 drop moves the active piece down the grid,
 locking it in place if it cannot move further.
 */
-func (g *Game) drop() {
-	if !g.canMove(g.activePiece, 0, 1) {
+func (g *Game) moveDown() {
+	if !g.grid.canMove(g.activePiece, 0, 1) {
 		g.handleActivePieceLanded()
 	} else {
 		g.activePiece.pos.y++
@@ -371,64 +388,13 @@ func (g *Game) drop() {
 }
 
 /*
-handleKeyPress centralizes the handling of key presses to reduce redundancy.
-
-Parameters:
-- key: The ebiten key to check.
-- pressed: A pointer to a boolean indicating if the key was previously pressed.
-- action: The action to perform if the key is pressed.
-*/
-func (g *Game) handleKeyPress(keys []ebiten.Key, pressed *bool, action func()) {
-	for _, key := range keys {
-		if ebiten.IsKeyPressed(key) {
-			if !*pressed {
-				action()
-			}
-			*pressed = true
-			return
-		}
-	}
-	*pressed = false
-}
-
-/*
-rotate handles the rotation of the active piece when the space key is pressed.
-*/
-func (g *Game) rotate() {
-	g.handleKeyPress(g.rotateKeys, &g.rotateKeyPressed, func() {
-		if !g.activePiece.isBomb() { // do not rotate bomb (it is symmetric and has a visual sparkle)
-			g.activePiece.currentRotation = (g.activePiece.currentRotation + 90) % 360
-		}
-	})
-}
-
-/*
 speedup handles the speding up when the "increase speed" key is pressed.
 */
 func (g *Game) speedup() {
-	g.handleKeyPress(g.speedKeys, &g.speedupKeyPressed, func() {
-		if g.speedLevelIdx+1 < len(speedLevels) {
-			g.speedLevelIdx++
-			log.Printf("speed level increased manually to %d at %f sec", g.speedLevelIdx, g.gameTimeSec)
-		}
-	})
-}
-
-/*
-movePieceInDirection moves the active piece one cell in the specified direction
-when the corresponding arrow key is pressed.
-
-Parameters:
-- direction: The direction to move the piece (-1 for left, 1 for right).
-- key: The ebiten key to check for the direction.
-- pressed: A pointer to a boolean indicating if the key was previously pressed.
-*/
-func (g *Game) movePieceInDirection(direction int, keys []ebiten.Key, pressed *bool) {
-	g.handleKeyPress(keys, pressed, func() {
-		if g.canMove(g.activePiece, direction, 0) {
-			g.activePiece.pos.x += direction
-		}
-	})
+	if g.input.isKeyPressed("speedup") && g.speedLevelIdx+1 < len(speedLevels) {
+		g.speedLevelIdx++
+		log.Printf("speed level increased manually to %d at %f sec", g.speedLevelIdx, g.gameTimeSec)
+	}
 }
 
 /*
@@ -439,227 +405,7 @@ Parameters:
 - screen: The ebiten.Image to draw the game state onto.
 */
 func (g *Game) Draw(screen *ebiten.Image) {
-	// Fill only the game area with the background color
-	vector.DrawFilledRect(screen, 0, 0, float32(screenWidth-sidebarWidth), float32(screenHeight), backgroundColor, false)
-
-	if g.gameOver {
-		if g.score >= g.loadHighScore() {
-			ebitenutil.DebugPrintAt(screen, "New High Score!", screenWidth/2-50, screenHeight/2)
-		} else {
-			ebitenutil.DebugPrintAt(screen, "GAME OVER", screenWidth/2-50, screenHeight/2)
-		}
-		ebitenutil.DebugPrintAt(screen, fmt.Sprintf("Score: %d", g.score), screenWidth/2-50, screenHeight/2+20)
-	}
-
-	sidebarX := screenWidth - sidebarWidth
-	vector.DrawFilledRect(screen, float32(sidebarX), 0, sidebarWidth, screenHeight, sidebarColor, false)
-	drawBorder(screen)
-	g.drawLockedPieces(screen)
-	g.drawBoundingBox(screen)
-
-	op := &ebiten.DrawImageOptions{}
-	g.applyRotationToPiece(op, g.activePiece)
-	screen.DrawImage(g.activePiece.image, op)
-	g.drawSidebar(screen)
-}
-
-/*
-drawSidebar renders the sidebar, including the next piece, restart button,
-and score.
-
-Parameters:
-- screen: The ebiten.Image to draw the sidebar onto.
-*/
-func (g *Game) drawSidebar(screen *ebiten.Image) {
-	sidebarX := screenWidth - sidebarWidth
-
-	// Draw "Next Piece"
-	ebitenutil.DebugPrintAt(screen, "NEXT PIECE", sidebarX+10, 20)
-	op := &ebiten.DrawImageOptions{}
-	imageScaleX, imageScaleY := g.nextPiece.getScale()
-	op.GeoM.Scale(imageScaleX, imageScaleY) // Apply scaling to the next piece
-	op.GeoM.Translate(float64(sidebarX+40), 50)
-	screen.DrawImage(g.nextPiece.image, op)
-
-	// Draw restart button
-	ebitenutil.DebugPrintAt(screen, "RESTART", sidebarX+10, 160)
-
-	// Draw top 5 scores
-	ebitenutil.DebugPrintAt(screen, "TOP 5 SCORES", sidebarX+10, 200)
-	topScores := g.loadTopScores()
-	for i, score := range topScores {
-		ebitenutil.DebugPrintAt(screen, fmt.Sprintf("%d: %d", i+1, score), sidebarX+10, 220+i*20)
-	}
-
-	// Draw current score
-	ebitenutil.DebugPrintAt(screen, "SCORE", sidebarX+10, 120)
-	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("%d", g.score), sidebarX+80, 120)
-
-	// Draw current speed level
-	ebitenutil.DebugPrintAt(screen, "SPEED", sidebarX+10, 140)
-	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("%d", g.speedLevelIdx+1), sidebarX+80, 140)
-
-	// Draw hints about joint bodies
-	hintPosLL := Pos{sidebarX, screenHeight}
-	hintRowHeight := 0
-	for i := 0; i < len(allBodies); i++ {
-		body := allBodies[len(allBodies)-1-i]
-
-		ok, hintAreaSize := g.drawSidebarHint(screen, body, hintPosLL)
-
-		// go to row above if no more space on the sidebar row
-		if !ok {
-			hintPosLL.x = sidebarX
-			hintPosLL.y -= hintRowHeight + 10
-			_, hintAreaSize = g.drawSidebarHint(screen, body, hintPosLL)
-		}
-
-		if hintRowHeight < hintAreaSize.h {
-			hintRowHeight = hintAreaSize.h
-		}
-
-		hintPosLL.x += hintAreaSize.w
-	}
-}
-
-func (g *Game) drawSidebarHint(screen *ebiten.Image, body *Body, posLL Pos) (bool, Size) {
-	hintTextAreaHeight := 40
-	hintAreaSize := Size{70, hintTextAreaHeight} // text + pieces together
-
-	// check if outside of screen
-	if screenWidth < posLL.x+hintAreaSize.w {
-		return false, hintAreaSize
-	}
-
-	// draw text
-	hintTextPos := addPos(posLL, Pos{0, -hintTextAreaHeight})
-	ebitenutil.DebugPrintAt(screen, body.name, hintTextPos.x, hintTextPos.y)                        // todo: render text at the center of the hint area
-	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("%d", body.score), hintTextPos.x, hintTextPos.y+20) // todo: render text at the center of the hint area
-
-	// get dimension of the body
-	boxPos, boxSize := g.getBoundingBox(body)
-	hintAreaSize.h += boxSize.h * scale
-
-	// draw text pieces
-	bodyPosUL := addPos(posLL, Pos{hintAreaSize.w/2 - scale*boxSize.w/2, -hintAreaSize.h})
-	for _, bp := range body.bodyPieces {
-		piece := g.getPiece(bp.pieceType)
-		w, h := grid2ScrSize(float32(piece.size.w)/2, float32(piece.size.h)/2)
-
-		op := &ebiten.DrawImageOptions{}
-		imageScaleX, imageScaleY := piece.getScale()
-		op.GeoM.Scale(imageScaleX, imageScaleY) // Apply scaling to the next piece
-		op.GeoM.Translate(float64(-w), float64(-h))
-		op.GeoM.Rotate(-getRotationTheta(bp.rotation))
-		op.GeoM.Translate(float64(bodyPosUL.x+(bp.pos.x-boxPos.x)*scale), float64(bodyPosUL.y+(bp.pos.y-boxPos.y)*scale))
-		op.GeoM.Translate(float64(w), float64(h))
-		screen.DrawImage(piece.image, op)
-	}
-
-	return true, hintAreaSize
-}
-
-/*
-Returns the bounding box of a body in bodyPiece CS.
-*/
-func (g *Game) getBoundingBox(body *Body) (Pos, Size) {
-	minPos := Pos{}
-	maxPos := Pos{}
-
-	for i, bp := range body.bodyPieces {
-		piece := g.getPiece(bp.pieceType)
-		rotatedSize := rotateSize(piece.size, piece.currentRotation)
-
-		if i == 0 || bp.pos.x < minPos.x {
-			minPos.x = bp.pos.x
-		}
-		if i == 0 || bp.pos.y < minPos.y {
-			minPos.y = bp.pos.y
-		}
-		if i == 0 || maxPos.x < bp.pos.x+rotatedSize.w {
-			maxPos.x = bp.pos.x + rotatedSize.w
-		}
-		if i == 0 || maxPos.y < bp.pos.y+rotatedSize.h {
-			maxPos.y = bp.pos.y + rotatedSize.h
-		}
-	}
-
-	return minPos, Size{maxPos.x - minPos.x, maxPos.y - minPos.y}
-}
-
-func (g *Game) getPiece(pieceType string) *Piece {
-	idx := slices.IndexFunc(allPieces, func(p Piece) bool { return p.pieceType == pieceType })
-	return &allPieces[idx]
-}
-
-/*
-drawLockedPieces renders all locked pieces on the grid.
-
-Parameters:
-- screen: The ebiten.Image to draw the locked pieces onto.
-*/
-func (g *Game) drawLockedPieces(screen *ebiten.Image) {
-	for _, lp := range g.lockedPieces {
-		op := &ebiten.DrawImageOptions{}
-
-		// Calculate the top-left corner of the locked piece in screen coordinates.
-
-		g.applyRotationToPiece(op, lp)
-		screen.DrawImage(lp.image, op)
-	}
-}
-
-/*
-applyRotationToPiece applies the current rotation to a piece and prepares it
-for drawing on the screen.
-
-Parameters:
-- op: The ebiten.DrawImageOptions to apply transformations.
-- piece: The Piece to apply the rotation to.
-*/
-func (g *Game) applyRotationToPiece(op *ebiten.DrawImageOptions, piece *Piece) {
-	imageScaleX, imageScaleY := piece.getScale()
-	op.GeoM.Scale(imageScaleX, imageScaleY)
-
-	// Center the rotation point (relative to the piece).
-	x, y := grid2ScrPos(float32(piece.pos.x), float32(piece.pos.y))
-	w, h := grid2ScrSize(float32(piece.size.w)/2, float32(piece.size.h)/2)
-	centerX, centerY := x+w, y+h
-
-	// Translate to the center of the piece.
-	op.GeoM.Translate(float64(-w), float64(-h))
-
-	// Rotate around the center.
-	op.GeoM.Rotate(-getRotationTheta(piece.currentRotation))
-
-	// Translate the piece back to its grid position.
-	op.GeoM.Translate(float64(centerX), float64(centerY))
-}
-
-/*
-drawBoundingBox draws a bounding box around the active piece for visual
-reference.
-
-Parameters:
-- screen: The ebiten.Image to draw the bounding box onto.
-*/
-func (g *Game) drawBoundingBox(screen *ebiten.Image) {
-	x, y := grid2ScrPos(float32(g.activePiece.pos.x), float32(g.activePiece.pos.y))
-	w, h := grid2ScrSize(float32(g.activePiece.size.w), float32(g.activePiece.size.h))
-	vector.StrokeRect(screen, x, y, w+1, h+1, 1, boundingBoxColor, false)
-}
-
-/*
-drawBorder draws a border around the game area.
-
-Parameters:
-- screen: The ebiten.Image to draw the border onto.
-*/
-func drawBorder(screen *ebiten.Image) {
-	x, y := grid2ScrPos(0.5, -0.5)
-	w, h := grid2ScrSize(float32(gridSize.w-1), float32(gridSize.h))
-	// draw a rectangle with thick border. the top border is invisible (intentionally outside of the screen) intentionally.
-	vector.StrokeRect(screen, x, y, w, h, scale, boundingBoxColor, false)
+	g.compMgr.draw(screen)
 }
 
 /*
@@ -677,33 +423,6 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
 }
 
 /*
-canMove checks if the active piece can move to a new position on the grid.
-
-Parameters:
-- dx: The change in the x-direction.
-- dy: The change in the y-direction.
-
-Returns:
-- True if the piece can move to the new position, otherwise false.
-*/
-func (g *Game) canMove(piece *Piece, dx, dy int) bool {
-	newPos := Pos{piece.pos.x + dx, piece.pos.y + dy}
-	size := rotateSize(piece.size, piece.currentRotation)
-
-	if !isWithinBounds(newPos, size, Pos{1, 1}, Pos{gridSize.w - 1, gridSize.h - 1}) {
-		return false
-	}
-
-	for _, piece := range g.lockedPieces {
-		if piece.isColliding(newPos, size) {
-			return false
-		}
-	}
-
-	return true
-}
-
-/*
 Call this when the active piece is landed. If does the following:
 If the active piece is a bomb: destroys piece below.
 Otherwise locks the piece, join and score bodies, then spawn a new piece.
@@ -711,81 +430,21 @@ Spawn a new piece.
 */
 func (g *Game) handleActivePieceLanded() {
 	if g.activePiece.isBomb() {
-		below := addPos(g.activePiece.pos, Pos{0, 1})
-		// is the location below the bomb within the grid?
-		if isWithinBounds(below, Size{1, 1}, Pos{1, 1}, Pos{gridSize.w - 1, gridSize.h - 1}) {
-			// remove (unlock) each piece below the bomb
-			for i := 0; i < g.activePiece.size.w; i++ {
-				piece := g.grid[below.x+i][below.y]
-				if piece != nil {
-					g.unlockPiece(piece)
-				}
-			}
+		piecesBelow := g.grid.getPiecesBelow(g.activePiece)
+		for _, piece := range piecesBelow {
+			g.grid.unlockPiece(piece)
 		}
+
+		// play wave effect centered on the bomb
+		x, y := grid2ScrPos(float32(g.activePiece.pos.x), float32(g.activePiece.pos.y))
+		w, h := grid2ScrSize(float32(g.activePiece.size.w), float32(g.activePiece.size.h))
+		g.wave.setCenter(Pos{int(x+w/2), int(y+h/2)})
+		g.wave.activate(true)
 	} else {
-		g.lockPiece(g.activePiece)
+		g.grid.lockPiece(g.activePiece)
 		g.joinAndScorePieces([]*Piece{g.activePiece})
 	}
 	g.spawnNewPiece()
-}
-
-/*
-lockPiece locks the active piece in its current position on the grid,
-adding it to the list of locked pieces.
-*/
-func (g *Game) lockPiece(piece *Piece) {
-	// find in the sorted locked list
-	idx := sort.Search(len(g.lockedPieces), func(i int) bool {
-		return piece.pos.y < g.lockedPieces[i].pos.y || (piece.pos.y == g.lockedPieces[i].pos.y && piece.pos.x <= g.lockedPieces[i].pos.x)
-	})
-
-	if idx < len(g.lockedPieces) && g.lockedPieces[idx] == piece {
-		log.Fatalf("The piece %v is not expected in the locked list!", piece)
-	}
-
-	// insert to sorted list
-	g.lockedPieces = append(g.lockedPieces, nil)
-	copy(g.lockedPieces[idx+1:], g.lockedPieces[idx:])
-	g.lockedPieces[idx] = piece
-
-	// add references to the locked piece in the grid
-	g.changePieceInGrid(piece, true)
-}
-
-/*
-Remove piece from the locked list and grid matrix.
-*/
-func (g *Game) unlockPiece(lockedPiece *Piece) {
-	// find in the sorted locked list
-	idx := sort.Search(len(g.lockedPieces), func(i int) bool {
-		return lockedPiece.pos.y < g.lockedPieces[i].pos.y || (lockedPiece.pos.y == g.lockedPieces[i].pos.y && lockedPiece.pos.x <= g.lockedPieces[i].pos.x)
-	})
-
-	if idx == len(g.lockedPieces) || g.lockedPieces[idx] != lockedPiece {
-		log.Fatalf("The piece %v is expected in the locked list!", lockedPiece)
-	}
-
-	// remove from sorted list
-	g.lockedPieces = append(g.lockedPieces[:idx], g.lockedPieces[idx+1:]...)
-
-	// remove references to the locked piece in the grid
-	g.changePieceInGrid(lockedPiece, false)
-}
-
-/*
-add/remove references to the locked piece in the grid
-*/
-func (g *Game) changePieceInGrid(piece *Piece, add bool) {
-	rotatedSize := rotateSize(piece.size, piece.currentRotation)
-	for x := piece.pos.x; x < piece.pos.x+rotatedSize.w; x++ {
-		for y := piece.pos.y; y < piece.pos.y+rotatedSize.h; y++ {
-			if add {
-				g.grid[x][y] = piece
-			} else {
-				g.grid[x][y] = nil
-			}
-		}
-	}
 }
 
 /*
@@ -793,77 +452,33 @@ spawnNewPiece make the next piece to be the active piece and
 creates the next active piece from the available pieces.
 */
 func (g *Game) spawnNewPiece() {
-	if g.activePiece.pos.y == 0 && !g.canMove(g.activePiece, 0, 1) {
+	if g.activePiece.pos.y == 0 && !g.grid.canMove(g.activePiece, 0, 1) {
 		g.endGame()
 		return
 	}
 
 	g.activePiece = g.nextPiece
+	g.apc.p = g.activePiece
 	g.nextPiece = g.generatePiece()
 }
 
 func (g *Game) joinAndScorePieces(pieces []*Piece) {
 	log.Printf("joinAndScorePieces(pieces: %v)", pieces)
 
-	joinedCnt := 0
-	for 0 < len(pieces) {
-		piece := pieces[0]
-		pieces = pieces[1:]
+	bodies := g.grid.joinPieces(pieces)
 
-		if piece != nil {
-			for _, body := range allBodies {
-				posList := body.matchAtLockedPiece(g, piece)
-
-				if posList != nil {
-					g.score += body.score
-					g.removePieces(posList)
-					joinedCnt++
-				}
-			}
-		}
+	for _, b := range bodies {
+		g.score += b.score
 	}
 
-	if 0 < joinedCnt {
-		pieces = g.compactGrid()
+	if 0 < len(bodies) {
+		pieces = g.grid.compactGrid()
 
-		// if any pieces has fallen => recurse
+		// if any piece has fallen => recurse
 		if pieces != nil {
 			g.joinAndScorePieces(pieces)
 		}
 	}
-}
-
-func (g *Game) removePieces(positions []Pos) {
-	for _, pos := range positions {
-		piece := g.grid[pos.x][pos.y]
-		g.unlockPiece(piece)
-	}
-}
-
-func (g *Game) compactGrid() []*Piece {
-	fallenPieces := make([]*Piece, 0)
-
-	for i := len(g.lockedPieces) - 1; 0 <= i; i-- {
-		piece := g.lockedPieces[i]
-
-		// check if piece can fall
-		size := rotateSize(piece.size, piece.currentRotation)
-		dy := size.h - 1
-		for g.canMove(piece, 0, dy+1) {
-			dy++
-		}
-
-		if size.h <= dy {
-			log.Printf("Moving piece '%s'@%v down by %d", piece.pieceType, piece.pos, dy)
-			g.unlockPiece(piece)
-			piece.pos.y += dy
-			g.lockPiece(piece)
-
-			fallenPieces = append(fallenPieces, piece)
-		}
-	}
-
-	return fallenPieces
 }
 
 /*
@@ -892,7 +507,7 @@ func (g *Game) generatePiece() *Piece {
 	}
 
 	newPiece := allPieces[newPieceIdx]
-	newPiece.pos.x = gridSize.w / 2
+	newPiece.pos.x = g.grid.size.w / 2
 	newPiece.pos.y = 0
 	if !newPiece.isBomb() { // do not rotate bomb (it is symmetric and has a visual sparkle)
 		newPiece.currentRotation = rand.Intn(4) * 90
