@@ -39,13 +39,41 @@ func (b *Body) init() {
 		b.pieceTypeToIdx[bodyPiece.pieceType] = append(idxList, idx)
 	}
 
-	log.Printf("Body.init() name:%s pieceTypeToIdx:%v", b.name, b.pieceTypeToIdx)
+	log.Printf("Body.init() name:'%s' pieceTypeToIdx:%v", b.name, b.pieceTypeToIdx)
+}
+
+/*
+Returns the bounding box of a body in bodyPiece CS.
+*/
+func (b *Body) getBoundingBox() (Pos, Size) {
+	minPos := Pos{}
+	maxPos := Pos{}
+
+	for i, bp := range b.bodyPieces {
+		piece := getPieceByType(bp.pieceType)
+		rotatedSize := rotateSize(piece.size, piece.currentRotation)
+
+		if i == 0 || bp.pos.x < minPos.x {
+			minPos.x = bp.pos.x
+		}
+		if i == 0 || bp.pos.y < minPos.y {
+			minPos.y = bp.pos.y
+		}
+		if i == 0 || maxPos.x < bp.pos.x+rotatedSize.w {
+			maxPos.x = bp.pos.x + rotatedSize.w
+		}
+		if i == 0 || maxPos.y < bp.pos.y+rotatedSize.h {
+			maxPos.y = bp.pos.y + rotatedSize.h
+		}
+	}
+
+	return minPos, Size{maxPos.x - minPos.x, maxPos.y - minPos.y}
 }
 
 /*
 checks if the Body is located in the game's grid at the location of a locked piece
 */
-func (body *Body) matchAtLockedPiece(g *Game, lockedPiece *Piece) []Pos {
+func (body *Body) matchAtLockedPiece(grid *GridComp, lockedPiece *Piece) []Pos {
 	log.Printf(" Body[%s].matchAtLockedPiece(lockedPiece:%s,pos:%v,rot:%d)", body.name, lockedPiece.pieceType, lockedPiece.pos, lockedPiece.currentRotation)
 	// check if the body contains at least one body piece having the same type as the locked piece?
 	idxList, ok := body.pieceTypeToIdx[lockedPiece.pieceType]
@@ -56,7 +84,7 @@ func (body *Body) matchAtLockedPiece(g *Game, lockedPiece *Piece) []Pos {
 	// enumerate the body pieces of the body having the required type. try to match the body to the grid at that body piece
 	for _, idx := range idxList {
 		bodyPiece := &body.bodyPieces[idx]
-		posList := body.matchBodyPieceAtLockedPiece(g, bodyPiece, lockedPiece)
+		posList := body.matchBodyPieceAtLockedPiece(grid, bodyPiece, lockedPiece)
 		if posList != nil && 0 < len(posList) {
 			return posList
 		}
@@ -68,7 +96,7 @@ func (body *Body) matchAtLockedPiece(g *Game, lockedPiece *Piece) []Pos {
 checks if the Body is located in the game's grid at the location of a locked piece.
 the check assumes that the locked piece is located at a specific body piece.
 */
-func (body *Body) matchBodyPieceAtLockedPiece(g *Game, bodyPiece *BodyPiece, lockedPiece *Piece) []Pos {
+func (body *Body) matchBodyPieceAtLockedPiece(grid *GridComp, bodyPiece *BodyPiece, lockedPiece *Piece) []Pos {
 	bodyCsOrigin := bodyPiece.pos // fix the origin of the body CS
 	bodyCsRotation := bodyPiece.rotation - lockedPiece.currentRotation
 
@@ -85,7 +113,7 @@ func (body *Body) matchBodyPieceAtLockedPiece(g *Game, bodyPiece *BodyPiece, loc
 			return nil
 		}
 
-		piece := g.grid[posGridCs.x][posGridCs.y]
+		piece := grid.getPiece(posGridCs)
 		if piece == nil {
 			log.Printf("  Checking '%s'@%v... Empty grid location.", bp.pieceType, posGridCs)
 			return nil

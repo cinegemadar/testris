@@ -7,6 +7,11 @@ import (
 type Pos struct{ x, y int }  // position in the grid
 type Size struct{ w, h int } // dimensions of a piece in the grid
 
+type Rect struct {
+	pos Pos
+	size Size
+}
+
 func angleDegEq(ang1, ang2 int) bool {
 	return (ang1-ang2)%360 == 0
 }
