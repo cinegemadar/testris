@@ -121,7 +121,7 @@ endGame handles the end of the game, saving the score and checking for a new hig
 */
 func (g *Game) endGame() {
 	g.apc.activate(false)
-
+	MUSIC_PLAYER.Pause()
 	log.Printf("Game ended. Spawn stat: %v", g.spawnStat)
 	// Save the current score to the highscore file
 	g.saveScore(g.score)
@@ -195,6 +195,8 @@ func (g *Game) Reset() {
 	g.grid.activate(true)
 	g.sideBar.activate(true)
 	g.apc.p = g.activePiece
+
+	MUSIC_PLAYER.Play()
 }
 
 /*
@@ -273,6 +275,7 @@ NewGame creates and returns a new Game instance with initialized pieces
 and game state.
 */
 func NewGame() *Game {
+	MUSIC_PLAYER.Play()
 	// initialze bodies
 	for _, body := range allBodies {
 		print("%v", body)
@@ -524,11 +527,18 @@ func (g *Game) generatePiece() *Piece {
 /*
 main initializes the game window and starts the game loop.
 */
+var MUSIC_PLAYER *Audio
+
+func init() {
+
+	MUSIC_PLAYER = NewAudio("assets/theme.mp3")
+}
+
 func main() {
 	log.SetFlags(log.Ltime)
 	ebiten.SetWindowSize(screenWidth, screenHeight)
 	ebiten.SetWindowTitle("TESTRis - Fixed Piece Spawning and Locking")
-
+	// init() is already called automatically by Go runtime
 	game := NewGame()
 	if err := ebiten.RunGame(game); err != nil {
 		log.Fatal(err)
