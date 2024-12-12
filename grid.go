@@ -115,7 +115,7 @@ func (g *GridComp) canMove(piece *Piece, dx, dy int) bool {
 	newPos := Pos{piece.pos.x + dx, piece.pos.y + dy}
 	size := rotateSize(piece.size, piece.currentRotation)
 
-	if !isWithinBounds(newPos, size, Pos{1, 1}, Pos{g.size.w - 1, g.size.h - 1}) {
+	if !isWithinBounds(newPos, size, Pos{1, 0}, Pos{g.size.w - 1, g.size.h}) {
 		return false
 	}
 
