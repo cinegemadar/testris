@@ -1,14 +1,16 @@
-name: Release Windows App
+name: Build and Release Windows Executable
 
 on:
   push:
     tags:
-      - 'v*.*.*'
+      - 'v*.*.*'  # Trigger the workflow on tag pushes that match the semantic versioning
 
 jobs:
-  build:
+  build-and-release:
     runs-on: ubuntu-latest
-
+    env:
+      ACTIONS_RUNNER_DEBUG: true
+      ACTIONS_STEP_DEBUG: true
     steps:
     - uses: actions/checkout@v4
 
@@ -26,23 +28,16 @@ jobs:
       run: |
         Xvfb :99 -screen 0 1024x768x16 &
         echo "Xvfb started"
-        echo "DISPLAY=:99" >> $GITHUB_ENV
+        export DISPLAY=:99
+        echo "DISPLAY set to $DISPLAY"
 
-    - name: Build for Windows
-      env:
-        DISPLAY: ${{ env.DISPLAY }}
+    - name: Build Windows executable
       run: |
         GOOS=windows GOARCH=amd64 go build -v -o myapp.exe .
+      env:
+        DISPLAY: ${{ env.DISPLAY }}
 
-  create_release:
-    needs: build
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: Debug Tag Reference
-      run: 'echo "Tag Name: ${{ github.ref_name }}"'
-
-    - name: Create GitHub Release
+    - name: Create Release
       id: create_release
       uses: actions/create-release@v1
       env:
@@ -50,13 +45,9 @@ jobs:
       with:
         tag_name: ${{ github.ref_name }}
         release_name: Release ${{ github.ref_name }}
+        body: "Windows executable release of MyApp."
         draft: false
         prerelease: false
-
-    - name: Debug Create Release Outputs
-      run: |
-        echo "Upload URL: ${{ steps.create_release.outputs.upload_url }}"
-        echo "Tag Name: ${{ steps.create_release.outputs.tag_name }}"
 
     - name: Upload Release Asset
       uses: actions/upload-release-asset@v1
