@@ -32,7 +32,12 @@ func (a *Audio) createMusicPlayer() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	a.player, err = audioContext.NewPlayer(themeMusicStream)
+	loopedStream := audio.NewInfiniteLoop(themeMusicStream, themeMusicStream.Length())
+
+	lengthSec := (int)(themeMusicStream.Length()) / (audioContext.SampleRate() * 2 * 2) // 16 bits stereo
+	log.Printf("Streaming '%s' (length %d s) in infinite loop", a.themeMusicAssetFile, lengthSec)
+
+	a.player, err = audioContext.NewPlayer(loopedStream)
 	if err != nil {
 		log.Fatal(err)
 	}
