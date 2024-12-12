@@ -24,6 +24,7 @@ const (
 	scale        = 30 // Unified scale factor for cells and sprites
 	
 	DrawOrderBkgd = 10
+	DrawOrderWaveEffect = 15
 	DrawOrderGrid = 20
 	DrawOrderActivePiece = 30
 	DrawOrderSideBar = 40
@@ -41,6 +42,9 @@ var (
 	boundingBoxColor = color.RGBA{R: 255, G: 255, B: 0, A: 255}
 	sidebarColor     = color.RGBA{R: 130, G: 130, B: 130, A: 255}
 	backgroundColor  = color.RGBA{R: 100, G: 100, B: 100, A: 255}
+	waveEffectColor       = color.RGBA{R: 183, G: 87, B: 8, A: 255}
+	waveEffectLifeTimeSec = float32(0.5) // length of the effect
+	waveEffectFillPcnt    = 0.3 // means x percent of the effect area is filled with the wave
 	userInput        *UserInput
 )
 
@@ -152,6 +156,7 @@ func (g *Game) loadHighScore() int {
 type Game struct {
 	compMgr             *ComponentMgr
 	background          *BackgroundComp
+	wave                *WaveEffectComp
 	grid                *GridComp
 	input               *UserInput
 	apc                 *PieceComp
@@ -292,12 +297,14 @@ func NewGame() *Game {
 
 	game.input = userInput
 	game.background = NewBackground(Pos{0, 0}, Size{screenWidth - sidebarWidth, screenHeight}, DrawOrderBkgd)
+	game.wave = NewWaveEffect(false, Rect{Pos{0, 0}, Size{screenWidth, screenHeight}}, scale, waveEffectFillPcnt, (int)(waveEffectLifeTimeSec * ticksPerSec), DrawOrderWaveEffect)
 	game.grid = NewGridComp(gridSize, DrawOrderGrid)
 	game.apc = NewPieceComp(game.grid, userInput, DrawOrderActivePiece)
 	game.gameOver = NewModalDialog([]string{}, Pos{screenWidth/2-50, screenHeight/2}, DrawOrderGameOver)
 	game.sideBar = NewSideBar(userInput, Pos{screenWidth - sidebarWidth, 0}, Size{sidebarWidth, screenHeight}, func() { game.Reset() }, DrawOrderSideBar)
 
 	game.compMgr.add(game.background)
+	game.compMgr.add(game.wave)
 	game.compMgr.add(game.grid)
 	game.compMgr.add(game.apc)
 	game.compMgr.add(game.gameOver)
@@ -428,6 +435,12 @@ func (g *Game) handleActivePieceLanded() {
 		for _, piece := range piecesBelow {
 			g.grid.unlockPiece(piece)
 		}
+
+		// play effect
+		x, y := grid2ScrPos(float32(g.activePiece.pos.x), float32(g.activePiece.pos.y))
+		w, h := grid2ScrSize(float32(g.activePiece.size.w), float32(g.activePiece.size.h))
+		g.wave.setCenter(Pos{int(x+w/2), int(y+h/2)})
+		g.wave.activate(true)
 	} else {
 		g.grid.lockPiece(g.activePiece)
 		g.joinAndScorePieces([]*Piece{g.activePiece})
