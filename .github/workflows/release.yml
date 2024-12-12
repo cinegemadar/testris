@@ -8,9 +8,6 @@ on:
 jobs:
   build-and-release:
     runs-on: ubuntu-latest
-    env:
-      ACTIONS_RUNNER_DEBUG: true
-      ACTIONS_STEP_DEBUG: true
     steps:
     - uses: actions/checkout@v4
 
@@ -29,7 +26,6 @@ jobs:
         Xvfb :99 -screen 0 1024x768x16 &
         echo "Xvfb started"
         export DISPLAY=:99
-        echo "DISPLAY set to $DISPLAY"
 
     - name: Build Windows executable
       run: |
@@ -45,14 +41,15 @@ jobs:
       with:
         tag_name: ${{ github.ref_name }}
         release_name: Release ${{ github.ref_name }}
-        body: "Windows executable release of MyApp."
         draft: false
         prerelease: false
 
     - name: Upload Release Asset
       uses: actions/upload-release-asset@v1
+      env:
+        UPLOAD_URL: ${{ steps.create_release.outputs.upload_url }}
       with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        upload_url: ${{ env.UPLOAD_URL }}
         asset_path: ./myapp.exe
         asset_name: myapp.exe
         asset_content_type: application/octet-stream
