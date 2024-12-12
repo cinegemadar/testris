@@ -90,18 +90,27 @@ func (mgr *ComponentMgr) reset() {
 	}
 }
 
-func (mgr *ComponentMgr) update(frameCnt int) {
-	gamePaused := false
+func (mgr *ComponentMgr) isBlocked() bool {
+	gameBlocked := false
 	for _, c := range mgr.compList {
 		if c.getState() == StateBlocking {
-			gamePaused = true
+			gameBlocked = true
 			break
 		}
 	}
+	
+	return gameBlocked
+}
+
+func (mgr *ComponentMgr) update(frameCnt int) {
+	gameBlocked := mgr.isBlocked()
 
 	for _, c := range mgr.compList {
 		if c.getState() != StateInactive {
-			c.update(gamePaused, frameCnt)
+			c.update(gameBlocked, frameCnt)
+
+			// if a component is just blocking ensure is has effect on updating the follower components
+			gameBlocked = gameBlocked || c.getState() == StateBlocking
 		}
 	}
 }

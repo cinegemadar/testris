@@ -284,7 +284,16 @@ func TestGameJoinAndScorePieces(t *testing.T) {
 	piecesMat := fillGrid(game, gridDesc);
 
 	origScore := game.score
-	game.joinAndScorePieces([]*Piece{ piecesMat[2][3] }) // <T in the bottom row
+	joined := game.joinPieces([]*Piece{ piecesMat[2][3] }) // <T in the bottom row
+
+	if !joined || game.rockEffect.getState() != StateBlocking {
+		t.Errorf("Expected to pieces joined (%t) and rocking (%d).", joined, game.rockEffect.getState())
+	}
+
+	// execute rock effect
+	for i := 1; i < 60*10; i++ {
+		game.rockEffect.update(false, i)
+	}
 
 	// 1 body joins and disappears:
 	//          ^T      <H
