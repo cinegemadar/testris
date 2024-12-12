@@ -162,7 +162,6 @@ type Game struct {
 	apc                 *PieceComp
 	gameOver            *DialogComp
 	sideBar             *SideBarComp
-//	lockedPieces        []*Piece   // Array to store locked pieces, sorted first by y then x coordinate
 	activePiece         *Piece
 	nextPiece           *Piece
 	score               int
@@ -436,7 +435,7 @@ func (g *Game) handleActivePieceLanded() {
 			g.grid.unlockPiece(piece)
 		}
 
-		// play effect
+		// play wave effect centered on the bomb
 		x, y := grid2ScrPos(float32(g.activePiece.pos.x), float32(g.activePiece.pos.y))
 		w, h := grid2ScrSize(float32(g.activePiece.size.w), float32(g.activePiece.size.h))
 		g.wave.setCenter(Pos{int(x+w/2), int(y+h/2)})
