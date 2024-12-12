@@ -25,6 +25,7 @@ jobs:
     - name: Start Xvfb
       run: |
         Xvfb :99 -screen 0 1024x768x16 &
+        echo "Xvfb started"
         echo "DISPLAY=:99" >> $GITHUB_ENV
 
     - name: Build for Windows
@@ -38,6 +39,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    - name: Debug Tag Reference
+      run: 'echo "Tag Name: ${{ github.ref_name }}"'
+
     - name: Create GitHub Release
       id: create_release
       uses: actions/create-release@v1
@@ -50,7 +54,9 @@ jobs:
         prerelease: false
 
     - name: Debug Create Release Outputs
-      run: echo "Upload URL: ${{ steps.create_release.outputs.upload_url }}"
+      run: |
+        echo "Upload URL: ${{ steps.create_release.outputs.upload_url }}"
+        echo "Tag Name: ${{ steps.create_release.outputs.tag_name }}"
 
     - name: Upload Release Asset
       uses: actions/upload-release-asset@v1
