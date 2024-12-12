@@ -1,0 +1,57 @@
+name: Release Windows App
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.23'
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libxrandr-dev libx11-dev libgl1-mesa-dev xorg-dev xvfb libasound2-dev
+
+    - name: Start Xvfb
+      run: |
+        Xvfb :99 -screen 0 1024x768x16 &
+        echo "Xvfb started"
+        export DISPLAY=:99
+        echo "DISPLAY set to $DISPLAY"
+
+    - name: Build for Windows
+      run: |
+        GOOS=windows GOARCH=amd64 go build -v -o myapp.exe .
+
+    - name: Upload Release Asset
+      uses: actions/upload-release-asset@v1
+      with:
+        upload_url: ${{ github.event.release.upload_url }}
+        asset_path: ./myapp.exe
+        asset_name: myapp.exe
+        asset_content_type: application/octet-stream
+
+  create_release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - name: Create GitHub Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
+        draft: false
+        prerelease: false
