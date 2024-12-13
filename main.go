@@ -285,6 +285,30 @@ func NewGame() *Game {
 		print("%v", body)
 		body.init()
 	}
+	
+	// load font
+	if normTextFace == nil || smallTextFace == nil {
+		ttfFile, err := os.Open("assets/veramono/VeraMono.ttf")
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		s, err := text.NewGoTextFaceSource(ttfFile)
+		if err != nil {
+			log.Fatal(err)
+		}
+		mplusFaceSource := s
+
+		normTextFace = &text.GoTextFace {
+			Source: mplusFaceSource,
+			Size:   20,
+		}
+
+		smallTextFace = &text.GoTextFace {
+			Source: mplusFaceSource,
+			Size:   12,
+		}
+	}
 
 	game := &Game{
 		compMgr:    NewComponentMgr(),
@@ -544,28 +568,6 @@ func main() {
 	log.SetFlags(log.Ltime)
 	ebiten.SetWindowSize(screenWidth, screenHeight)
 	ebiten.SetWindowTitle("TESTRis")
-
-	// load font
-	ttfFile, err := os.Open("assets/veramono/VeraMono.ttf")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	s, err := text.NewGoTextFaceSource(ttfFile)
-	if err != nil {
-		log.Fatal(err)
-	}
-	mplusFaceSource := s
-
-	normTextFace = &text.GoTextFace {
-		Source: mplusFaceSource,
-		Size:   20,
-	}
-
-	smallTextFace = &text.GoTextFace {
-		Source: mplusFaceSource,
-		Size:   12,
-	}
 
 	// init() is already called automatically by Go runtime
 	game := NewGame()
