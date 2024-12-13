@@ -479,6 +479,7 @@ func (g *Game) handleActivePieceLanded() {
 		w, h := grid2ScrSize(float32(g.activePiece.size.w), float32(g.activePiece.size.h))
 		g.waveEffect.setCenter(Pos{int(x+w/2), int(y+h/2)})
 		g.waveEffect.activate(true)
+		blastPlayer.Play()
 	} else {
 		g.grid.lockPiece(g.activePiece)
 
@@ -614,10 +615,13 @@ func (g *Game) generatePiece() *Piece {
 main initializes the game window and starts the game loop.
 */
 var MUSIC_PLAYER *Audio
+var blastPlayer *Audio
+var joinPlayer *Audio
 
 func init() {
 
-	MUSIC_PLAYER = NewAudio("assets/theme.mp3")
+	MUSIC_PLAYER = NewAudio("assets/audio/theme.mp3", true) // looped
+	blastPlayer = NewAudio("assets/audio/547042__cogfirestudios__hit-impact-sword-3.wav", false) // not looped
 }
 
 func main() {
