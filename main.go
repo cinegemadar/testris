@@ -26,6 +26,7 @@ const (
 	DrawOrderBkgd = 10
 	DrawOrderWaveEffect = 15
 	DrawOrderGrid = 20
+	DrawOrderRockEffect = 25
 	DrawOrderActivePiece = 30
 	DrawOrderSideBar = 40
 	DrawOrderGameOver = 50
@@ -44,7 +45,9 @@ var (
 	backgroundColor  = color.RGBA{R: 100, G: 100, B: 100, A: 255}
 	waveEffectColor       = color.RGBA{R: 183, G: 87, B: 8, A: 255}
 	waveEffectLifeTimeSec = float32(0.5) // length of the effect
-	waveEffectFillPcnt    = 0.3 // means x percent of the effect area is filled with the wave
+	waveEffectFillPcnt    = 0.3 // means x percent of the effect area is filled with the waveEffect
+	rockEffectLifeTimeSec = float32(0.3) // length of the effect
+	rockEffectNofRock     = 5 // nr of rock events during the effect is playing
 	userInput        *UserInput
 )
 
@@ -156,13 +159,14 @@ func (g *Game) loadHighScore() int {
 type Game struct {
 	compMgr             *ComponentMgr
 	background          *BackgroundComp
-	wave                *WaveEffectComp
+	waveEffect          *WaveEffectComp
 	grid                *GridComp
+	rockEffect          *RockEffectComp
 	input               *UserInput
 	apc                 *PieceComp
 	gameOver            *DialogComp
 	sideBar             *SideBarComp
-	activePiece         *Piece
+	activePiece         *Piece // can be nil while rockEffect is active on the joined pieces
 	nextPiece           *Piece
 	score               int
 	frameCount          int
@@ -299,15 +303,17 @@ func NewGame() *Game {
 
 	game.input = userInput
 	game.background = NewBackground(Pos{0, 0}, Size{screenWidth - sidebarWidth, screenHeight}, DrawOrderBkgd)
-	game.wave = NewWaveEffect(false, Rect{Pos{0, 0}, Size{screenWidth, screenHeight}}, scale, waveEffectFillPcnt, (int)(waveEffectLifeTimeSec * ticksPerSec), DrawOrderWaveEffect)
+	game.waveEffect = NewWaveEffect(false, Rect{Pos{0, 0}, Size{screenWidth, screenHeight}}, scale, waveEffectFillPcnt, (int)(waveEffectLifeTimeSec * ticksPerSec), DrawOrderWaveEffect)
 	game.grid = NewGridComp(gridSize, DrawOrderGrid)
+	game.rockEffect = NewRockEffect(true, (int)(rockEffectLifeTimeSec * ticksPerSec), rockEffectNofRock, DrawOrderRockEffect)
 	game.apc = NewPieceComp(game.grid, userInput, DrawOrderActivePiece)
 	game.gameOver = NewModalDialog([]string{}, Pos{screenWidth/2-50, screenHeight/2}, DrawOrderGameOver)
 	game.sideBar = NewSideBar(userInput, Pos{screenWidth - sidebarWidth, 0}, Size{sidebarWidth, screenHeight}, func() { game.Reset() }, DrawOrderSideBar)
 
 	game.compMgr.add(game.background)
-	game.compMgr.add(game.wave)
+	game.compMgr.add(game.waveEffect)
 	game.compMgr.add(game.grid)
+	game.compMgr.add(game.rockEffect)
 	game.compMgr.add(game.apc)
 	game.compMgr.add(game.gameOver)
 	game.compMgr.add(game.sideBar)
@@ -339,7 +345,7 @@ func (g *Game) Update() error {
 	g.input.handleMouse()
 	g.compMgr.update(g.frameCount)
 
-	if g.gameOver.getState() == StateInactive {
+	if !g.compMgr.isBlocked() {
 		g.speedup()
 
 		if g.checkTimeToMoveDown() {
@@ -438,49 +444,99 @@ func (g *Game) handleActivePieceLanded() {
 			g.grid.unlockPiece(piece)
 		}
 
-		// play wave effect centered on the bomb
+		// play waveEffect effect centered on the bomb
 		x, y := grid2ScrPos(float32(g.activePiece.pos.x), float32(g.activePiece.pos.y))
 		w, h := grid2ScrSize(float32(g.activePiece.size.w), float32(g.activePiece.size.h))
-		g.wave.setCenter(Pos{int(x+w/2), int(y+h/2)})
-		g.wave.activate(true)
+		g.waveEffect.setCenter(Pos{int(x+w/2), int(y+h/2)})
+		g.waveEffect.activate(true)
 	} else {
 		g.grid.lockPiece(g.activePiece)
-		g.joinAndScorePieces([]*Piece{g.activePiece})
+
+		changedPieces := []*Piece{g.activePiece}
+		if g.joinPieces(changedPieces) {
+			// if a body is joined, spawning is delayed. following the procedure:
+			// 1 start rock effect
+			// 2 when the rock effect is over: score + compact grid + join again
+			// 3 if body is joined again go to 1
+			// 4 else spawn
+			return
+		}
 	}
 	g.spawnNewPiece()
 }
+
 
 /*
 spawnNewPiece make the next piece to be the active piece and
 creates the next active piece from the available pieces.
 */
 func (g *Game) spawnNewPiece() {
-	if g.activePiece.pos.y == 0 && !g.grid.canMove(g.activePiece, 0, 1) {
+	if g.activePiece != nil && g.activePiece.pos.y == 0 && !g.grid.canMove(g.activePiece, 0, 1) {
 		g.endGame()
 		return
 	}
 
+	log.Printf("Spawn new piece '%s'", g.nextPiece.pieceType)
 	g.activePiece = g.nextPiece
 	g.apc.p = g.activePiece
 	g.nextPiece = g.generatePiece()
 }
 
-func (g *Game) joinAndScorePieces(pieces []*Piece) {
-	log.Printf("joinAndScorePieces(pieces: %v)", pieces)
+/*
+Tries to join pieces around changedPieces argument.
+If any pieces were joined, it follows this procedure:
+1 removes them from the grid
+2 start rock effect on the joined pieces
 
-	bodies := g.grid.joinPieces(pieces)
+Returns true if any pieces were joined
+*/
+func (g *Game) joinPieces(changedPieces []*Piece) bool {
+	bodies, pieces := g.grid.joinPieces(changedPieces)
+
+	if 0 < len(pieces) {
+		log.Printf("joined!!! %v", pieces)
+		// debug check
+		changedPiecesMap := map[*Piece]bool{}
+		for _, p := range changedPieces {
+			changedPiecesMap[p] = true
+		}
+		hasIntersection := false
+		for _, p := range pieces {
+			_, ok := changedPiecesMap[p]
+			if ok {
+				hasIntersection = true
+			}
+		}
+		
+		if !hasIntersection {
+			log.Fatalf("The changed pieces and joined pieces are disjunct!")
+		}
+
+		// if a body is joined, start rock effect. score + compact grid only after the effect is over
+		g.activePiece = nil
+		g.apc.p = nil // do not want the PieceComp to draw the active piece
+		g.rockEffect.setTarget(pieces)
+		g.rockEffect.setCompletedCallback(func() { g.scoreBodies(bodies) })
+		g.rockEffect.activate(true)
+
+		return true
+	} else {
+		return false
+	}
+}
+
+func (g *Game) scoreBodies(bodies []*Body) {
+	log.Printf("scoreBodies(bodies: %v)", bodies)
 
 	for _, b := range bodies {
 		g.score += b.score
 	}
 
-	if 0 < len(bodies) {
-		pieces = g.grid.compactGrid()
+	changedPieces := g.grid.compactGrid()
 
-		// if any piece has fallen => recurse
-		if pieces != nil {
-			g.joinAndScorePieces(pieces)
-		}
+	// if any piece has fallen => join again
+	if 0 == len(changedPieces) || !g.joinPieces(changedPieces) {
+		g.spawnNewPiece()
 	}
 }
 

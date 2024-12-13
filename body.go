@@ -73,7 +73,7 @@ func (b *Body) getBoundingBox() (Pos, Size) {
 /*
 checks if the Body is located in the game's grid at the location of a locked piece
 */
-func (body *Body) matchAtLockedPiece(grid *GridComp, lockedPiece *Piece) []Pos {
+func (body *Body) matchAtLockedPiece(grid *GridComp, lockedPiece *Piece) []*Piece {
 	log.Printf(" Body[%s].matchAtLockedPiece(lockedPiece:%s,pos:%v,rot:%d)", body.name, lockedPiece.pieceType, lockedPiece.pos, lockedPiece.currentRotation)
 	// check if the body contains at least one body piece having the same type as the locked piece?
 	idxList, ok := body.pieceTypeToIdx[lockedPiece.pieceType]
@@ -84,9 +84,9 @@ func (body *Body) matchAtLockedPiece(grid *GridComp, lockedPiece *Piece) []Pos {
 	// enumerate the body pieces of the body having the required type. try to match the body to the grid at that body piece
 	for _, idx := range idxList {
 		bodyPiece := &body.bodyPieces[idx]
-		posList := body.matchBodyPieceAtLockedPiece(grid, bodyPiece, lockedPiece)
-		if posList != nil && 0 < len(posList) {
-			return posList
+		pieceList := body.matchBodyPieceAtLockedPiece(grid, bodyPiece, lockedPiece)
+		if 0 < len(pieceList) {
+			return pieceList
 		}
 	}
 	return nil
@@ -96,13 +96,13 @@ func (body *Body) matchAtLockedPiece(grid *GridComp, lockedPiece *Piece) []Pos {
 checks if the Body is located in the game's grid at the location of a locked piece.
 the check assumes that the locked piece is located at a specific body piece.
 */
-func (body *Body) matchBodyPieceAtLockedPiece(grid *GridComp, bodyPiece *BodyPiece, lockedPiece *Piece) []Pos {
+func (body *Body) matchBodyPieceAtLockedPiece(grid *GridComp, bodyPiece *BodyPiece, lockedPiece *Piece) []*Piece {
 	bodyCsOrigin := bodyPiece.pos // fix the origin of the body CS
 	bodyCsRotation := bodyPiece.rotation - lockedPiece.currentRotation
 
 	log.Printf("  Body[%s].matchBodyPieceAtLockedPiece(bodyPiece:%v) - bodyCs:%v,%ddeg", body.name, bodyPiece, bodyCsOrigin, bodyCsRotation)
 
-	matchedPosList := make([]Pos, 0)
+	var matchedPieceList []*Piece
 	for _, bp := range body.bodyPieces {
 		relPosBodyCs := subPos(bp.pos, bodyCsOrigin)
 		relPosGridCs := rotatePos(relPosBodyCs, bodyCsRotation)
@@ -133,9 +133,9 @@ func (body *Body) matchBodyPieceAtLockedPiece(grid *GridComp, bodyPiece *BodyPie
 		}
 
 		log.Printf("  Checking '%s'@%v... Body piece matches", bp.pieceType, posGridCs)
-		matchedPosList = append(matchedPosList, posGridCs)
+		matchedPieceList = append(matchedPieceList, piece)
 	}
 
-	log.Printf("   Body matched. Returning pos list %v", matchedPosList)
-	return matchedPosList
+	log.Printf("   Body matched. Returning piece list %v", matchedPieceList)
+	return matchedPieceList
 }

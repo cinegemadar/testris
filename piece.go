@@ -87,7 +87,7 @@ func (p *PieceComp) reset() {
 }
 
 func (p *PieceComp) update(paused bool, frameCnt int) {
-	if p.state == StateInactive || paused {
+	if p.state == StateInactive || paused || p.p == nil { // note that p.p can be nil while an effect is playing on the joined pieces
 		return
 	}
 	
@@ -107,7 +107,7 @@ func (p *PieceComp) update(paused bool, frameCnt int) {
 }
 
 func (p *PieceComp) draw(screen *ebiten.Image) {
-	if p.state != StateInactive {
+	if p.state != StateInactive && p.p != nil { // note that p.p can be nil while an effect is playing on the joined pieces
 		p.drawBoundingBox(screen)
 
 		op := &ebiten.DrawImageOptions{}

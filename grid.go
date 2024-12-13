@@ -137,35 +137,30 @@ func (g *GridComp) drop(piece *Piece) {
 	}
 }
 
-func (g *GridComp) joinPieces(pieces []*Piece) []*Body {
-	log.Printf("joinPieces(pieces: %v)", pieces)
+func (g *GridComp) joinPieces(changedPieces []*Piece) ([]*Body, []*Piece) {
+	log.Printf("joinPieces(changedPieces: %v)", changedPieces)
 
 	var bodies []*Body
-	for 0 < len(pieces) {
+	var joinedPieces []*Piece
+	for 0 < len(changedPieces) {
 		// dequeue first piece
-		piece := pieces[0]
-		pieces = pieces[1:]
+		piece := changedPieces[0]
+		changedPieces = changedPieces[1:]
 
 		if piece != nil {
 			for _, body := range allBodies {
-				posList := body.matchAtLockedPiece(g, piece)
+				pieces := body.matchAtLockedPiece(g, piece)
 
-				if posList != nil {
-					g.removePieces(posList)
+				if 0 < len(pieces) {
+					g.unlockPieces(pieces)
+					joinedPieces = append(joinedPieces, pieces...)
 					bodies = append(bodies, body)
 				}
 			}
 		}
 	}
 
-	return bodies
-}
-
-func (g *GridComp) removePieces(positions []Pos) {
-	for _, pos := range positions {
-		piece := g.content[pos.x][pos.y]
-		g.unlockPiece(piece)
-	}
+	return bodies, joinedPieces
 }
 
 func (g *GridComp) compactGrid() []*Piece {
@@ -237,6 +232,12 @@ func (g *GridComp) unlockPiece(lockedPiece *Piece) {
 
 	// remove references to the locked piece in the grid
 	g.changePieceInGrid(lockedPiece, false)
+}
+
+func (g *GridComp) unlockPieces(pieces []*Piece) {
+	for _, piece := range pieces {
+		g.unlockPiece(piece)
+	}
 }
 
 /*
