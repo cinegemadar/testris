@@ -538,7 +538,7 @@ func init() {
 func main() {
 	log.SetFlags(log.Ltime)
 	ebiten.SetWindowSize(screenWidth, screenHeight)
-	ebiten.SetWindowTitle("TESTRis - Fixed Piece Spawning and Locking")
+	ebiten.SetWindowTitle("TESTRis")
 	// init() is already called automatically by Go runtime
 	game := NewGame()
 	if err := ebiten.RunGame(game); err != nil {
