@@ -20,7 +20,7 @@ const highScoreFileName = "highscore.txt"
 const (
 	screenWidth  = 800
 	screenHeight = 600
-	sidebarWidth = 140
+	sidebarWidth = 180
 	ticksPerSec  = 60 // Update() is called with this frequency
 	scale        = 30 // Unified scale factor for cells and sprites
 	
