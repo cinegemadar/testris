@@ -12,6 +12,7 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
+	"github.com/hajimehoshi/ebiten/v2/text/v2"
 )
 
 const highScoreFileName = "highscore.txt"
@@ -46,6 +47,8 @@ var (
 	waveEffectLifeTimeSec = float32(0.5) // length of the effect
 	waveEffectFillPcnt    = 0.3 // means x percent of the effect area is filled with the wave
 	userInput        *UserInput
+	normTextFace     *text.GoTextFace
+	smallTextFace    *text.GoTextFace
 )
 
 /*
@@ -539,6 +542,29 @@ func main() {
 	log.SetFlags(log.Ltime)
 	ebiten.SetWindowSize(screenWidth, screenHeight)
 	ebiten.SetWindowTitle("TESTRis")
+
+	// load font
+	ttfFile, err := os.Open("assets/veramono/VeraMono.ttf")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	s, err := text.NewGoTextFaceSource(ttfFile)
+	if err != nil {
+		log.Fatal(err)
+	}
+	mplusFaceSource := s
+
+	normTextFace = &text.GoTextFace {
+		Source: mplusFaceSource,
+		Size:   20,
+	}
+
+	smallTextFace = &text.GoTextFace {
+		Source: mplusFaceSource,
+		Size:   12,
+	}
+
 	// init() is already called automatically by Go runtime
 	game := NewGame()
 	if err := ebiten.RunGame(game); err != nil {
