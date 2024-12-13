@@ -301,12 +301,14 @@ func NewGame() *Game {
 			"speedup": []ebiten.Key{ebiten.KeyS}, } )
 	}
 
+	gridCenterX, gridCenterY := grid2ScrPos(float32(gridSize.w)/2, float32(gridSize.h)/2)
+
 	game.input = userInput
 	game.background = NewBackground(Pos{0, 0}, Size{screenWidth - sidebarWidth, screenHeight}, DrawOrderBkgd)
 	game.wave = NewWaveEffect(false, Rect{Pos{0, 0}, Size{screenWidth, screenHeight}}, scale, waveEffectFillPcnt, (int)(waveEffectLifeTimeSec * ticksPerSec), DrawOrderWaveEffect)
 	game.grid = NewGridComp(gridSize, DrawOrderGrid)
 	game.apc = NewPieceComp(game.grid, userInput, DrawOrderActivePiece)
-	game.gameOver = NewModalDialog([]string{}, Pos{screenWidth/2-50, screenHeight/2}, DrawOrderGameOver)
+	game.gameOver = NewModalDialog([]string{}, Pos{int(gridCenterX), int(gridCenterY)}, DrawOrderGameOver)
 	game.sideBar = NewSideBar(userInput, Pos{screenWidth - sidebarWidth, 0}, Size{sidebarWidth, screenHeight}, func() { game.Reset() }, DrawOrderSideBar)
 
 	game.compMgr.add(game.background)

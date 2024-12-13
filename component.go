@@ -3,12 +3,14 @@ package main
 import (
 	"fmt"
 	"log"
+	"math"
 	"reflect"
 	"slices"
 	"sort"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
+	"github.com/hajimehoshi/ebiten/v2/text/v2"
 	"github.com/hajimehoshi/ebiten/v2/vector"
 )
 
@@ -119,6 +121,21 @@ func (mgr *ComponentMgr) draw(screen *ebiten.Image) {
 	}
 }
 
+func renderText(screen *ebiten.Image, s string, x int, y int, textFace *text.GoTextFace) {
+	op := &text.DrawOptions{}
+	op.GeoM.Translate(float64(x), float64(y))
+	op.LineSpacing = textFace.Size * 1.5
+	text.Draw(screen, s, textFace, op)
+}
+
+func renderTextCentered(screen *ebiten.Image, s string, x int, y int, textFace *text.GoTextFace) {
+	op := &text.DrawOptions{}
+	op.GeoM.Translate(float64(x), float64(y))
+	op.LineSpacing = textFace.Size * 1.5
+	op.PrimaryAlign = text.AlignCenter
+	text.Draw(screen, s, textFace, op)
+}
+
 //
 // ------------ dialog ------------
 //
@@ -182,8 +199,26 @@ func (d *DialogComp) update(paused bool, frameCnt int) {
 
 func (d *DialogComp) draw(screen *ebiten.Image) {
 	if d.state != StateInactive {
-		for idx, t := range d.text {
-			ebitenutil.DebugPrintAt(screen, t, d.screenPos.x, d.screenPos.y + idx * 20)
+		lineHeight := normTextFace.Size*1.5
+		textWidth := float64(0)
+		textHeight := int(lineHeight)*len(d.text)
+		for _, t := range d.text {
+			w, _ := text.Measure(t, normTextFace, lineHeight)
+			textWidth = math.Max(textWidth, w)
+		}
+
+		dialogBorder := 15
+		rectX := d.screenPos.x - int(textWidth/2) - dialogBorder
+		rectY := d.screenPos.y - textHeight/2 - dialogBorder
+		rectW := int(textWidth)+2*dialogBorder
+		rectH := textHeight+2*dialogBorder
+
+		vector.DrawFilledRect(screen, float32(rectX), float32(rectY), float32(rectW), float32(rectH), sidebarColor, false)
+
+		ypos := float64(rectY + dialogBorder)
+		for _, t := range d.text {
+			renderTextCentered(screen, t, d.screenPos.x, int(ypos), normTextFace)
+			ypos += lineHeight
 		}
 	}
 }
