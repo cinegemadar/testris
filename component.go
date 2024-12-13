@@ -3,12 +3,13 @@ package main
 import (
 	"fmt"
 	"log"
+	"math"
 	"reflect"
 	"slices"
 	"sort"
 
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
+	"github.com/hajimehoshi/ebiten/v2/text/v2"
 	"github.com/hajimehoshi/ebiten/v2/vector"
 )
 
@@ -128,6 +129,21 @@ func (mgr *ComponentMgr) draw(screen *ebiten.Image) {
 	}
 }
 
+func renderText(screen *ebiten.Image, s string, x int, y int, textFace *text.GoTextFace) {
+	op := &text.DrawOptions{}
+	op.GeoM.Translate(float64(x), float64(y))
+	op.LineSpacing = textFace.Size * 1.5
+	text.Draw(screen, s, textFace, op)
+}
+
+func renderTextCentered(screen *ebiten.Image, s string, x int, y int, textFace *text.GoTextFace) {
+	op := &text.DrawOptions{}
+	op.GeoM.Translate(float64(x), float64(y))
+	op.LineSpacing = textFace.Size * 1.5
+	op.PrimaryAlign = text.AlignCenter
+	text.Draw(screen, s, textFace, op)
+}
+
 //
 // ------------ dialog ------------
 //
@@ -191,8 +207,26 @@ func (d *DialogComp) update(paused bool, frameCnt int) {
 
 func (d *DialogComp) draw(screen *ebiten.Image) {
 	if d.state != StateInactive {
-		for idx, t := range d.text {
-			ebitenutil.DebugPrintAt(screen, t, d.screenPos.x, d.screenPos.y + idx * 20)
+		lineHeight := normTextFace.Size*1.5
+		textWidth := float64(0)
+		textHeight := int(lineHeight)*len(d.text)
+		for _, t := range d.text {
+			w, _ := text.Measure(t, normTextFace, lineHeight)
+			textWidth = math.Max(textWidth, w)
+		}
+
+		dialogBorder := 15
+		rectX := d.screenPos.x - int(textWidth/2) - dialogBorder
+		rectY := d.screenPos.y - textHeight/2 - dialogBorder
+		rectW := int(textWidth)+2*dialogBorder
+		rectH := textHeight+2*dialogBorder
+
+		vector.DrawFilledRect(screen, float32(rectX), float32(rectY), float32(rectW), float32(rectH), sidebarColor, false)
+
+		ypos := float64(rectY + dialogBorder)
+		for _, t := range d.text {
+			renderTextCentered(screen, t, d.screenPos.x, int(ypos), normTextFace)
+			ypos += lineHeight
 		}
 	}
 }
@@ -279,7 +313,6 @@ func (s *SideBarComp) setValues(nextPiece *Piece, score int, speedLevel int, top
 	s.topScores = topScores
 }
 
-
 /*
 drawSidebar renders the sidebar, including the next piece, restart button,
 and score.
@@ -290,30 +323,32 @@ Parameters:
 func (s *SideBarComp) drawSidebar(screen *ebiten.Image) {
 	vector.DrawFilledRect(screen, float32(s.pos.x), float32(s.pos.y), float32(s.size.w), float32(s.size.h), sidebarColor, false)
 
+	lineHeight := int(smallTextFace.Size * 1.5)
 	// Draw "Next Piece"
-	ebitenutil.DebugPrintAt(screen, "NEXT PIECE", s.pos.x+10, 20)
+	renderTextCentered(screen, "NEXT PIECE", s.pos.x+s.size.w/2, 20, smallTextFace)
+
 	op := &ebiten.DrawImageOptions{}
 	imageScaleX, imageScaleY := s.nextPiece.getScale()
 	op.GeoM.Scale(imageScaleX, imageScaleY) // Apply scaling to the next piece
-	op.GeoM.Translate(float64(s.pos.x+40), 50)
+	op.GeoM.Translate(float64(s.pos.x + (s.size.w - scale)/2), 50)
 	screen.DrawImage(s.nextPiece.image, op)
 
 	// Draw restart button
-	ebitenutil.DebugPrintAt(screen, "RESTART", s.restartTextBox.pos.x, s.restartTextBox.pos.y)
+	renderText(screen, "RESTART", s.restartTextBox.pos.x, s.restartTextBox.pos.y, smallTextFace)
 
 	// Draw top 5 scores
-	ebitenutil.DebugPrintAt(screen, "TOP 5 SCORES", s.pos.x+10, 200)
+	renderText(screen, "TOP 5 SCORES", s.pos.x+10, 200, smallTextFace)
 	for i, score := range s.topScores {
-		ebitenutil.DebugPrintAt(screen, fmt.Sprintf("%d: %d", i+1, score), s.pos.x+10, 220+i*20)
+		renderText(screen, fmt.Sprintf("%d: %d", i+1, score), s.pos.x+10, 200+(i+1)*lineHeight, smallTextFace)
 	}
 
 	// Draw current score
-	ebitenutil.DebugPrintAt(screen, "SCORE", s.pos.x+10, 120)
-	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("%d", s.score), s.pos.x+80, 120)
+	renderText(screen, "SCORE", s.pos.x+10, 120, smallTextFace)
+	renderText(screen, fmt.Sprintf("%d", s.score), s.pos.x+80, 120, smallTextFace)
 
 	// Draw current speed level
-	ebitenutil.DebugPrintAt(screen, "SPEED", s.pos.x+10, 140)
-	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("%d", s.speedLevel), s.pos.x+80, 140)
+	renderText(screen, "SPEED", s.pos.x+10, 120 + lineHeight, smallTextFace)
+	renderText(screen, fmt.Sprintf("%d", s.speedLevel), s.pos.x+80, 120 + lineHeight, smallTextFace)
 
 	// Draw hints about joint bodies
 	hintPosLL := Pos{s.pos.x, screenHeight}
@@ -321,13 +356,13 @@ func (s *SideBarComp) drawSidebar(screen *ebiten.Image) {
 	for i := 0; i < len(allBodies); i++ {
 		body := allBodies[len(allBodies)-1-i]
 
-		ok, hintAreaSize := s.drawSidebarHint(screen, body, hintPosLL)
+		ok, hintAreaSize := s.drawSidebarHint(screen, body, hintPosLL, lineHeight)
 
 		// go to row above if no more space on the sidebar row
 		if !ok {
 			hintPosLL.x = s.pos.x
 			hintPosLL.y -= hintRowHeight + 10
-			_, hintAreaSize = s.drawSidebarHint(screen, body, hintPosLL)
+			_, hintAreaSize = s.drawSidebarHint(screen, body, hintPosLL, lineHeight)
 		}
 
 		if hintRowHeight < hintAreaSize.h {
@@ -338,9 +373,9 @@ func (s *SideBarComp) drawSidebar(screen *ebiten.Image) {
 	}
 }
 
-func (s *SideBarComp) drawSidebarHint(screen *ebiten.Image, body *Body, posLL Pos) (bool, Size) {
-	hintTextAreaHeight := 40
-	hintAreaSize := Size{70, hintTextAreaHeight} // text + pieces together
+func (s *SideBarComp) drawSidebarHint(screen *ebiten.Image, body *Body, posLL Pos, lineHeight int) (bool, Size) {
+	hintTextAreaHeight := 50
+	hintAreaSize := Size{s.size.w/2, hintTextAreaHeight} // text + pieces together
 
 	// check if outside of screen
 	if screenWidth < posLL.x+hintAreaSize.w {
@@ -348,9 +383,12 @@ func (s *SideBarComp) drawSidebarHint(screen *ebiten.Image, body *Body, posLL Po
 	}
 
 	// draw text
-	hintTextPos := addPos(posLL, Pos{0, -hintTextAreaHeight})
-	ebitenutil.DebugPrintAt(screen, body.name, hintTextPos.x, hintTextPos.y)                        // todo: render text at the center of the hint area
-	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("%d", body.score), hintTextPos.x, hintTextPos.y+20) // todo: render text at the center of the hint area
+	hintTextPos := addPos(posLL, Pos{hintAreaSize.w/2, -hintTextAreaHeight+5})
+
+	renderText(screen, "SPEED", s.pos.x+10, 120 + lineHeight, smallTextFace)
+
+	renderTextCentered(screen, body.name, hintTextPos.x, hintTextPos.y, smallTextFace)
+	renderTextCentered(screen, fmt.Sprintf("%d", body.score), hintTextPos.x, hintTextPos.y+lineHeight, smallTextFace)
 
 	// get dimension of the body
 	boxPos, boxSize := body.getBoundingBox()

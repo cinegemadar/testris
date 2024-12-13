@@ -12,6 +12,7 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
+	"github.com/hajimehoshi/ebiten/v2/text/v2"
 )
 
 const highScoreFileName = "highscore.txt"
@@ -19,7 +20,7 @@ const highScoreFileName = "highscore.txt"
 const (
 	screenWidth  = 800
 	screenHeight = 600
-	sidebarWidth = 140
+	sidebarWidth = 180
 	ticksPerSec  = 60 // Update() is called with this frequency
 	scale        = 30 // Unified scale factor for cells and sprites
 	
@@ -49,6 +50,8 @@ var (
 	rockEffectLifeTimeSec = float32(0.3) // length of the effect
 	rockEffectNofRock     = 5 // nr of rock events during the effect is playing
 	userInput        *UserInput
+	normTextFace     *text.GoTextFace
+	smallTextFace    *text.GoTextFace
 )
 
 /*
@@ -237,15 +240,7 @@ func init() {
 	genericSize := allPieces[0].size
 
 	allBodies = []*Body{
-		{ // bar shape, consists of 3 parts
-			name:  "Fellow",
-			score: 1000,
-			bodyPieces: []BodyPiece{ // defined as vertical bar
-				{pos: Pos{0, 0}, rotation: 0, pieceType: "Head"},
-				{pos: Pos{0, genericSize.h}, rotation: 0, pieceType: "Torso"},
-				{pos: Pos{0, 2 * genericSize.h}, rotation: 0, pieceType: "Leg"},
-			},
-		}, { // bar shape, consists of 2 parts
+		{ // bar shape, consists of 2 parts
 			name:  "Asshead",
 			score: 500,
 			bodyPieces: []BodyPiece{ // defined as vertical bar
@@ -254,7 +249,16 @@ func init() {
 			},
 		},
 		{ // bar shape, consists of 3 parts
-			name:  "Right broken",
+			name:  "Fellow",
+			score: 1000,
+			bodyPieces: []BodyPiece{ // defined as vertical bar
+				{pos: Pos{0, 0}, rotation: 0, pieceType: "Head"},
+				{pos: Pos{0, genericSize.h}, rotation: 0, pieceType: "Torso"},
+				{pos: Pos{0, 2 * genericSize.h}, rotation: 0, pieceType: "Leg"},
+			},
+		},
+		{ // L shape, consists of 3 parts
+			name:  "Killed Bill",
 			score: 3000,
 			bodyPieces: []BodyPiece{ // defined as L shape
 				{pos: Pos{0, 0}, rotation: 90, pieceType: "Head"},
@@ -262,8 +266,8 @@ func init() {
 				{pos: Pos{genericSize.h, genericSize.h}, rotation: 0, pieceType: "Leg"},
 			},
 		},
-		{ // bar shape, consists of 3 parts
-			name:  "Left broken",
+		{ // L shape, consists of 3 parts
+			name:  "Failed Yoga",
 			score: 3000,
 			bodyPieces: []BodyPiece{ // defined as L shape
 				{pos: Pos{0, 0}, rotation: 0, pieceType: "LeftBrkTorso"},
@@ -285,6 +289,30 @@ func NewGame() *Game {
 		print("%v", body)
 		body.init()
 	}
+	
+	// load font
+	if normTextFace == nil || smallTextFace == nil {
+		ttfFile, err := os.Open("assets/veramono/VeraMono.ttf")
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		s, err := text.NewGoTextFaceSource(ttfFile)
+		if err != nil {
+			log.Fatal(err)
+		}
+		mplusFaceSource := s
+
+		normTextFace = &text.GoTextFace {
+			Source: mplusFaceSource,
+			Size:   20,
+		}
+
+		smallTextFace = &text.GoTextFace {
+			Source: mplusFaceSource,
+			Size:   12,
+		}
+	}
 
 	game := &Game{
 		compMgr:    NewComponentMgr(),
@@ -301,13 +329,15 @@ func NewGame() *Game {
 			"speedup": []ebiten.Key{ebiten.KeyS}, } )
 	}
 
+	gridCenterX, gridCenterY := grid2ScrPos(float32(gridSize.w)/2, float32(gridSize.h)/2)
+
 	game.input = userInput
 	game.background = NewBackground(Pos{0, 0}, Size{screenWidth - sidebarWidth, screenHeight}, DrawOrderBkgd)
 	game.waveEffect = NewWaveEffect(false, Rect{Pos{0, 0}, Size{screenWidth, screenHeight}}, scale, waveEffectFillPcnt, (int)(waveEffectLifeTimeSec * ticksPerSec), DrawOrderWaveEffect)
 	game.grid = NewGridComp(gridSize, DrawOrderGrid)
 	game.rockEffect = NewRockEffect(true, (int)(rockEffectLifeTimeSec * ticksPerSec), rockEffectNofRock, DrawOrderRockEffect)
 	game.apc = NewPieceComp(game.grid, userInput, DrawOrderActivePiece)
-	game.gameOver = NewModalDialog([]string{}, Pos{screenWidth/2-50, screenHeight/2}, DrawOrderGameOver)
+	game.gameOver = NewModalDialog([]string{}, Pos{int(gridCenterX), int(gridCenterY)}, DrawOrderGameOver)
 	game.sideBar = NewSideBar(userInput, Pos{screenWidth - sidebarWidth, 0}, Size{sidebarWidth, screenHeight}, func() { game.Reset() }, DrawOrderSideBar)
 
 	game.compMgr.add(game.background)
@@ -593,7 +623,8 @@ func init() {
 func main() {
 	log.SetFlags(log.Ltime)
 	ebiten.SetWindowSize(screenWidth, screenHeight)
-	ebiten.SetWindowTitle("TESTRis - Fixed Piece Spawning and Locking")
+	ebiten.SetWindowTitle("TESTRis")
+
 	// init() is already called automatically by Go runtime
 	game := NewGame()
 	if err := ebiten.RunGame(game); err != nil {
