@@ -233,15 +233,7 @@ func init() {
 	genericSize := allPieces[0].size
 
 	allBodies = []*Body{
-		{ // bar shape, consists of 3 parts
-			name:  "Fellow",
-			score: 1000,
-			bodyPieces: []BodyPiece{ // defined as vertical bar
-				{pos: Pos{0, 0}, rotation: 0, pieceType: "Head"},
-				{pos: Pos{0, genericSize.h}, rotation: 0, pieceType: "Torso"},
-				{pos: Pos{0, 2 * genericSize.h}, rotation: 0, pieceType: "Leg"},
-			},
-		}, { // bar shape, consists of 2 parts
+		{ // bar shape, consists of 2 parts
 			name:  "Asshead",
 			score: 500,
 			bodyPieces: []BodyPiece{ // defined as vertical bar
@@ -250,7 +242,16 @@ func init() {
 			},
 		},
 		{ // bar shape, consists of 3 parts
-			name:  "Right broken",
+			name:  "Fellow",
+			score: 1000,
+			bodyPieces: []BodyPiece{ // defined as vertical bar
+				{pos: Pos{0, 0}, rotation: 0, pieceType: "Head"},
+				{pos: Pos{0, genericSize.h}, rotation: 0, pieceType: "Torso"},
+				{pos: Pos{0, 2 * genericSize.h}, rotation: 0, pieceType: "Leg"},
+			},
+		},
+		{ // L shape, consists of 3 parts
+			name:  "Killed Bill",
 			score: 3000,
 			bodyPieces: []BodyPiece{ // defined as L shape
 				{pos: Pos{0, 0}, rotation: 90, pieceType: "Head"},
@@ -258,8 +259,8 @@ func init() {
 				{pos: Pos{genericSize.h, genericSize.h}, rotation: 0, pieceType: "Leg"},
 			},
 		},
-		{ // bar shape, consists of 3 parts
-			name:  "Left broken",
+		{ // L shape, consists of 3 parts
+			name:  "Failed Yoga",
 			score: 3000,
 			bodyPieces: []BodyPiece{ // defined as L shape
 				{pos: Pos{0, 0}, rotation: 0, pieceType: "LeftBrkTorso"},
