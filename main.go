@@ -322,10 +322,10 @@ func NewGame() *Game {
 
 	if userInput == nil {
 		userInput = NewUserInput(&map[string]KeyList{
-			"rotate": []ebiten.Key{ebiten.KeyEnter, ebiten.KeyNumpad8},
-			"left": []ebiten.Key{ebiten.KeyArrowLeft, ebiten.KeyNumpad7},
-			"right": []ebiten.Key{ebiten.KeyArrowRight, ebiten.KeyNumpad9},
-			"drop": []ebiten.Key{ebiten.KeyArrowDown, ebiten.KeyNumpad5, ebiten.KeySpace},
+			"rotate": []ebiten.Key{ebiten.KeyArrowUp, ebiten.KeyEnter, ebiten.KeyNumpad8, ebiten.KeyDigit8},
+			"left": []ebiten.Key{ebiten.KeyArrowLeft, ebiten.KeyNumpad7, ebiten.KeyDigit7},
+			"right": []ebiten.Key{ebiten.KeyArrowRight, ebiten.KeyNumpad9, ebiten.KeyDigit9},
+			"drop": []ebiten.Key{ebiten.KeyArrowDown, ebiten.KeyNumpad5, ebiten.KeySpace, ebiten.KeyDigit5},
 			"speedup": []ebiten.Key{ebiten.KeyS}, } )
 	}
 

@@ -341,6 +341,15 @@ func (s *SideBarComp) drawSidebar(screen *ebiten.Image) {
 	for i, score := range s.topScores {
 		renderText(screen, fmt.Sprintf("%d: %d", i+1, score), s.pos.x+10, 200+(i+1)*lineHeight, smallTextFace)
 	}
+	
+	// Draw controls
+	renderText(screen, "LEF: 7 <-",     s.pos.x+90, 200+1*lineHeight, smallTextFace)
+	renderText(screen, "ROT: 8 ENT ^",  s.pos.x+90, 200+2*lineHeight, smallTextFace)
+	renderText(screen, "           |",  s.pos.x+90, 200+2*lineHeight, smallTextFace)
+	renderText(screen, "RIG: 9 ->",     s.pos.x+90, 200+3*lineHeight, smallTextFace)
+	renderText(screen, "DRO: SPC 5 v",  s.pos.x+90, 200+4*lineHeight, smallTextFace)
+	renderText(screen, "           |",  s.pos.x+90, 200+4*lineHeight-3, smallTextFace)
+	renderText(screen, "SPD: S",        s.pos.x+90, 200+5*lineHeight, smallTextFace)
 
 	// Draw current score
 	renderText(screen, "SCORE", s.pos.x+10, 120, smallTextFace)
