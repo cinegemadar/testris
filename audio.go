@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"time"
 	"os"
 	"path"
 	"io"
@@ -108,4 +109,10 @@ func (a *Audio) Play() {
 // Pause pauses the audio playback by calling the Pause method on the underlying player.
 func (a *Audio) Pause() {
 	a.getPlayer().Pause()
+}
+
+func (a *Audio) SeekPlay(offset time.Duration) {
+	a.getPlayer().Rewind()
+	a.getPlayer().Seek(offset)
+	a.getPlayer().Play()
 }
