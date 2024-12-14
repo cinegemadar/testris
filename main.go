@@ -549,6 +549,7 @@ func (g *Game) joinPieces(changedPieces []*Piece) bool {
 		g.rockEffect.setTarget(pieces)
 		g.rockEffect.setCompletedCallback(func() { g.scoreBodies(bodies) })
 		g.rockEffect.activate(true)
+		joinPlayer.SeekPlay(2)
 
 		return true
 	} else {
@@ -619,9 +620,9 @@ var blastPlayer *Audio
 var joinPlayer *Audio
 
 func init() {
-
 	MUSIC_PLAYER = NewAudio("assets/audio/theme.mp3", true) // looped
 	blastPlayer = NewAudio("assets/audio/547042__cogfirestudios__hit-impact-sword-3.wav", false) // not looped
+	joinPlayer = NewAudio("assets/audio/752749__sprinklecipher__toy-electronic-typewriter-full-carriage-return-2.mp3", false) // not looped
 }
 
 func main() {
